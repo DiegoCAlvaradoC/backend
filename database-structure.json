@@ -1,0 +1,1015 @@
+{
+  "database": "ucb_admissions",
+  "host": "localhost",
+  "port": "5433",
+  "tables": [
+    {
+      "name": "colegios",
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id_colegio",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": false,
+          "default": "uuid_generate_v4()",
+          "position": 1
+        },
+        {
+          "name": "nombre",
+          "type": "character varying",
+          "maxLength": 200,
+          "nullable": false,
+          "default": null,
+          "position": 2
+        },
+        {
+          "name": "tipo",
+          "type": "character varying",
+          "maxLength": 20,
+          "nullable": false,
+          "default": null,
+          "position": 3
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "position": 4
+        }
+      ],
+      "constraints": [
+        {
+          "name": "colegios_pkey",
+          "type": "PRIMARY KEY",
+          "column": "id_colegio",
+          "foreignTable": "colegios",
+          "foreignColumn": "id_colegio"
+        },
+        {
+          "name": "colegios_nombre_key",
+          "type": "UNIQUE",
+          "column": "nombre",
+          "foreignTable": "colegios",
+          "foreignColumn": "nombre"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "colegios_pkey",
+          "definition": "CREATE UNIQUE INDEX colegios_pkey ON public.colegios USING btree (id_colegio)"
+        },
+        {
+          "name": "colegios_nombre_key",
+          "definition": "CREATE UNIQUE INDEX colegios_nombre_key ON public.colegios USING btree (nombre)"
+        }
+      ]
+    },
+    {
+      "name": "datos_ocr",
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": false,
+          "default": "uuid_generate_v4()",
+          "position": 1
+        },
+        {
+          "name": "postulante_id",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": false,
+          "default": null,
+          "position": 2
+        },
+        {
+          "name": "datos_extraidos",
+          "type": "text",
+          "maxLength": null,
+          "nullable": false,
+          "default": null,
+          "position": 3
+        },
+        {
+          "name": "confianza",
+          "type": "numeric",
+          "maxLength": null,
+          "nullable": true,
+          "default": null,
+          "position": 4
+        },
+        {
+          "name": "imagen_frontal",
+          "type": "character varying",
+          "maxLength": 500,
+          "nullable": true,
+          "default": null,
+          "position": 5
+        },
+        {
+          "name": "imagen_posterior",
+          "type": "character varying",
+          "maxLength": 500,
+          "nullable": true,
+          "default": null,
+          "position": 6
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "position": 7
+        }
+      ],
+      "constraints": [
+        {
+          "name": "datos_ocr_pkey",
+          "type": "PRIMARY KEY",
+          "column": "id",
+          "foreignTable": "datos_ocr",
+          "foreignColumn": "id"
+        },
+        {
+          "name": "datos_ocr_postulante_id_key",
+          "type": "UNIQUE",
+          "column": "postulante_id",
+          "foreignTable": "datos_ocr",
+          "foreignColumn": "postulante_id"
+        },
+        {
+          "name": "datos_ocr_postulante_id_fkey",
+          "type": "FOREIGN KEY",
+          "column": "postulante_id",
+          "foreignTable": "postulantes",
+          "foreignColumn": "id_postulante"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "datos_ocr_pkey",
+          "definition": "CREATE UNIQUE INDEX datos_ocr_pkey ON public.datos_ocr USING btree (id)"
+        },
+        {
+          "name": "datos_ocr_postulante_id_key",
+          "definition": "CREATE UNIQUE INDEX datos_ocr_postulante_id_key ON public.datos_ocr USING btree (postulante_id)"
+        }
+      ]
+    },
+    {
+      "name": "documentos",
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": false,
+          "default": "uuid_generate_v4()",
+          "position": 1
+        },
+        {
+          "name": "postulante_id",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": false,
+          "default": null,
+          "position": 2
+        },
+        {
+          "name": "fotocopia_ci",
+          "type": "boolean",
+          "maxLength": null,
+          "nullable": true,
+          "default": "false",
+          "position": 3
+        },
+        {
+          "name": "certificado_nacimiento",
+          "type": "boolean",
+          "maxLength": null,
+          "nullable": true,
+          "default": "false",
+          "position": 4
+        },
+        {
+          "name": "fotografias",
+          "type": "boolean",
+          "maxLength": null,
+          "nullable": true,
+          "default": "false",
+          "position": 5
+        },
+        {
+          "name": "titulo_bachiller",
+          "type": "boolean",
+          "maxLength": null,
+          "nullable": true,
+          "default": "false",
+          "position": 6
+        },
+        {
+          "name": "visa_estudiantil",
+          "type": "boolean",
+          "maxLength": null,
+          "nullable": true,
+          "default": "false",
+          "position": 7
+        },
+        {
+          "name": "fecha_entrega_ci",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": null,
+          "position": 8
+        },
+        {
+          "name": "fecha_entrega_certificado",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": null,
+          "position": 9
+        },
+        {
+          "name": "fecha_entrega_fotos",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": null,
+          "position": 10
+        },
+        {
+          "name": "fecha_entrega_titulo",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": null,
+          "position": 11
+        },
+        {
+          "name": "fecha_entrega_visa",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": null,
+          "position": 12
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "position": 13
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "position": 14
+        }
+      ],
+      "constraints": [
+        {
+          "name": "documentos_pkey",
+          "type": "PRIMARY KEY",
+          "column": "id",
+          "foreignTable": "documentos",
+          "foreignColumn": "id"
+        },
+        {
+          "name": "documentos_postulante_id_key",
+          "type": "UNIQUE",
+          "column": "postulante_id",
+          "foreignTable": "documentos",
+          "foreignColumn": "postulante_id"
+        },
+        {
+          "name": "documentos_postulante_id_fkey",
+          "type": "FOREIGN KEY",
+          "column": "postulante_id",
+          "foreignTable": "postulantes",
+          "foreignColumn": "id_postulante"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "documentos_pkey",
+          "definition": "CREATE UNIQUE INDEX documentos_pkey ON public.documentos USING btree (id)"
+        },
+        {
+          "name": "documentos_postulante_id_key",
+          "definition": "CREATE UNIQUE INDEX documentos_postulante_id_key ON public.documentos USING btree (postulante_id)"
+        }
+      ]
+    },
+    {
+      "name": "estadisticas",
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id_estadistica",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": false,
+          "default": "uuid_generate_v4()",
+          "position": 1
+        },
+        {
+          "name": "fecha",
+          "type": "date",
+          "maxLength": null,
+          "nullable": false,
+          "default": null,
+          "position": 2
+        },
+        {
+          "name": "cantidad_inscritos",
+          "type": "integer",
+          "maxLength": null,
+          "nullable": false,
+          "default": null,
+          "position": 3
+        },
+        {
+          "name": "colegio",
+          "type": "character varying",
+          "maxLength": 200,
+          "nullable": true,
+          "default": null,
+          "position": 4
+        },
+        {
+          "name": "carrera",
+          "type": "character varying",
+          "maxLength": 100,
+          "nullable": true,
+          "default": null,
+          "position": 5
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "position": 6
+        }
+      ],
+      "constraints": [
+        {
+          "name": "estadisticas_pkey",
+          "type": "PRIMARY KEY",
+          "column": "id_estadistica",
+          "foreignTable": "estadisticas",
+          "foreignColumn": "id_estadistica"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "estadisticas_pkey",
+          "definition": "CREATE UNIQUE INDEX estadisticas_pkey ON public.estadisticas USING btree (id_estadistica)"
+        }
+      ]
+    },
+    {
+      "name": "logs_sistema",
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id_log",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": false,
+          "default": "uuid_generate_v4()",
+          "position": 1
+        },
+        {
+          "name": "usuario_id",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": false,
+          "default": null,
+          "position": 2
+        },
+        {
+          "name": "accion",
+          "type": "character varying",
+          "maxLength": 100,
+          "nullable": false,
+          "default": null,
+          "position": 3
+        },
+        {
+          "name": "fecha_hora",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "position": 4
+        },
+        {
+          "name": "detalles",
+          "type": "text",
+          "maxLength": null,
+          "nullable": true,
+          "default": null,
+          "position": 5
+        },
+        {
+          "name": "ip_address",
+          "type": "character varying",
+          "maxLength": 45,
+          "nullable": true,
+          "default": null,
+          "position": 6
+        }
+      ],
+      "constraints": [
+        {
+          "name": "logs_sistema_pkey",
+          "type": "PRIMARY KEY",
+          "column": "id_log",
+          "foreignTable": "logs_sistema",
+          "foreignColumn": "id_log"
+        },
+        {
+          "name": "logs_sistema_usuario_id_fkey",
+          "type": "FOREIGN KEY",
+          "column": "usuario_id",
+          "foreignTable": "usuarios",
+          "foreignColumn": "id_usuario"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "logs_sistema_pkey",
+          "definition": "CREATE UNIQUE INDEX logs_sistema_pkey ON public.logs_sistema USING btree (id_log)"
+        },
+        {
+          "name": "idx_logs_fecha",
+          "definition": "CREATE INDEX idx_logs_fecha ON public.logs_sistema USING btree (fecha_hora)"
+        }
+      ]
+    },
+    {
+      "name": "periodos_inscripcion",
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id_periodo",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": false,
+          "default": "uuid_generate_v4()",
+          "position": 1
+        },
+        {
+          "name": "fecha_inicio",
+          "type": "date",
+          "maxLength": null,
+          "nullable": false,
+          "default": null,
+          "position": 2
+        },
+        {
+          "name": "fecha_fin",
+          "type": "date",
+          "maxLength": null,
+          "nullable": false,
+          "default": null,
+          "position": 3
+        },
+        {
+          "name": "estado",
+          "type": "boolean",
+          "maxLength": null,
+          "nullable": true,
+          "default": "true",
+          "position": 4
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "position": 5
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "position": 6
+        }
+      ],
+      "constraints": [
+        {
+          "name": "periodos_inscripcion_pkey",
+          "type": "PRIMARY KEY",
+          "column": "id_periodo",
+          "foreignTable": "periodos_inscripcion",
+          "foreignColumn": "id_periodo"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "periodos_inscripcion_pkey",
+          "definition": "CREATE UNIQUE INDEX periodos_inscripcion_pkey ON public.periodos_inscripcion USING btree (id_periodo)"
+        }
+      ]
+    },
+    {
+      "name": "personas_contacto",
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": false,
+          "default": "uuid_generate_v4()",
+          "position": 1
+        },
+        {
+          "name": "postulante_id",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": false,
+          "default": null,
+          "position": 2
+        },
+        {
+          "name": "nombre",
+          "type": "character varying",
+          "maxLength": 200,
+          "nullable": false,
+          "default": null,
+          "position": 3
+        },
+        {
+          "name": "parentesco",
+          "type": "character varying",
+          "maxLength": 50,
+          "nullable": false,
+          "default": null,
+          "position": 4
+        },
+        {
+          "name": "telefono",
+          "type": "character varying",
+          "maxLength": 20,
+          "nullable": false,
+          "default": null,
+          "position": 5
+        },
+        {
+          "name": "correo",
+          "type": "character varying",
+          "maxLength": 100,
+          "nullable": true,
+          "default": null,
+          "position": 6
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "position": 7
+        }
+      ],
+      "constraints": [
+        {
+          "name": "personas_contacto_pkey",
+          "type": "PRIMARY KEY",
+          "column": "id",
+          "foreignTable": "personas_contacto",
+          "foreignColumn": "id"
+        },
+        {
+          "name": "personas_contacto_postulante_id_fkey",
+          "type": "FOREIGN KEY",
+          "column": "postulante_id",
+          "foreignTable": "postulantes",
+          "foreignColumn": "id_postulante"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "personas_contacto_pkey",
+          "definition": "CREATE UNIQUE INDEX personas_contacto_pkey ON public.personas_contacto USING btree (id)"
+        }
+      ]
+    },
+    {
+      "name": "postulantes",
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id_postulante",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": false,
+          "default": "uuid_generate_v4()",
+          "position": 1
+        },
+        {
+          "name": "nombre",
+          "type": "character varying",
+          "maxLength": 200,
+          "nullable": false,
+          "default": null,
+          "position": 2
+        },
+        {
+          "name": "ci",
+          "type": "character varying",
+          "maxLength": 50,
+          "nullable": false,
+          "default": null,
+          "position": 3
+        },
+        {
+          "name": "nacionalidad",
+          "type": "character varying",
+          "maxLength": 100,
+          "nullable": true,
+          "default": null,
+          "position": 4
+        },
+        {
+          "name": "ciudad_procedencia",
+          "type": "character varying",
+          "maxLength": 100,
+          "nullable": true,
+          "default": null,
+          "position": 5
+        },
+        {
+          "name": "colegio_id",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": true,
+          "default": null,
+          "position": 6
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "position": 7
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "position": 8
+        }
+      ],
+      "constraints": [
+        {
+          "name": "postulantes_pkey",
+          "type": "PRIMARY KEY",
+          "column": "id_postulante",
+          "foreignTable": "postulantes",
+          "foreignColumn": "id_postulante"
+        },
+        {
+          "name": "postulantes_ci_key",
+          "type": "UNIQUE",
+          "column": "ci",
+          "foreignTable": "postulantes",
+          "foreignColumn": "ci"
+        },
+        {
+          "name": "postulantes_colegio_id_fkey",
+          "type": "FOREIGN KEY",
+          "column": "colegio_id",
+          "foreignTable": "colegios",
+          "foreignColumn": "id_colegio"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "postulantes_pkey",
+          "definition": "CREATE UNIQUE INDEX postulantes_pkey ON public.postulantes USING btree (id_postulante)"
+        },
+        {
+          "name": "postulantes_ci_key",
+          "definition": "CREATE UNIQUE INDEX postulantes_ci_key ON public.postulantes USING btree (ci)"
+        },
+        {
+          "name": "idx_postulantes_ci",
+          "definition": "CREATE INDEX idx_postulantes_ci ON public.postulantes USING btree (ci)"
+        }
+      ]
+    },
+    {
+      "name": "preinscripciones",
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id_preinscripcion",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": false,
+          "default": "uuid_generate_v4()",
+          "position": 1
+        },
+        {
+          "name": "postulante_id",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": false,
+          "default": null,
+          "position": 2
+        },
+        {
+          "name": "periodo_id",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": false,
+          "default": null,
+          "position": 3
+        },
+        {
+          "name": "creada_por_id",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": false,
+          "default": null,
+          "position": 4
+        },
+        {
+          "name": "fecha_registro",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "position": 5
+        },
+        {
+          "name": "estado",
+          "type": "character varying",
+          "maxLength": 20,
+          "nullable": true,
+          "default": "'PENDIENTE'::character varying",
+          "position": 6
+        },
+        {
+          "name": "resumen_datos",
+          "type": "text",
+          "maxLength": null,
+          "nullable": true,
+          "default": null,
+          "position": 7
+        },
+        {
+          "name": "observaciones",
+          "type": "text",
+          "maxLength": null,
+          "nullable": true,
+          "default": null,
+          "position": 8
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "position": 9
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "position": 10
+        }
+      ],
+      "constraints": [
+        {
+          "name": "preinscripciones_pkey",
+          "type": "PRIMARY KEY",
+          "column": "id_preinscripcion",
+          "foreignTable": "preinscripciones",
+          "foreignColumn": "id_preinscripcion"
+        },
+        {
+          "name": "preinscripciones_postulante_id_fkey",
+          "type": "FOREIGN KEY",
+          "column": "postulante_id",
+          "foreignTable": "postulantes",
+          "foreignColumn": "id_postulante"
+        },
+        {
+          "name": "preinscripciones_periodo_id_fkey",
+          "type": "FOREIGN KEY",
+          "column": "periodo_id",
+          "foreignTable": "periodos_inscripcion",
+          "foreignColumn": "id_periodo"
+        },
+        {
+          "name": "preinscripciones_creada_por_id_fkey",
+          "type": "FOREIGN KEY",
+          "column": "creada_por_id",
+          "foreignTable": "usuarios",
+          "foreignColumn": "id_usuario"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "preinscripciones_pkey",
+          "definition": "CREATE UNIQUE INDEX preinscripciones_pkey ON public.preinscripciones USING btree (id_preinscripcion)"
+        },
+        {
+          "name": "idx_preinscripciones_fecha",
+          "definition": "CREATE INDEX idx_preinscripciones_fecha ON public.preinscripciones USING btree (fecha_registro)"
+        },
+        {
+          "name": "idx_preinscripciones_estado",
+          "definition": "CREATE INDEX idx_preinscripciones_estado ON public.preinscripciones USING btree (estado)"
+        }
+      ]
+    },
+    {
+      "name": "reportes",
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id_reporte",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": false,
+          "default": "uuid_generate_v4()",
+          "position": 1
+        },
+        {
+          "name": "tipo",
+          "type": "character varying",
+          "maxLength": 20,
+          "nullable": false,
+          "default": null,
+          "position": 2
+        },
+        {
+          "name": "fecha_generacion",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "position": 3
+        },
+        {
+          "name": "formato",
+          "type": "character varying",
+          "maxLength": 10,
+          "nullable": false,
+          "default": null,
+          "position": 4
+        },
+        {
+          "name": "contenido",
+          "type": "text",
+          "maxLength": null,
+          "nullable": false,
+          "default": null,
+          "position": 5
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "position": 6
+        }
+      ],
+      "constraints": [
+        {
+          "name": "reportes_pkey",
+          "type": "PRIMARY KEY",
+          "column": "id_reporte",
+          "foreignTable": "reportes",
+          "foreignColumn": "id_reporte"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "reportes_pkey",
+          "definition": "CREATE UNIQUE INDEX reportes_pkey ON public.reportes USING btree (id_reporte)"
+        }
+      ]
+    },
+    {
+      "name": "usuarios",
+      "type": "BASE TABLE",
+      "columns": [
+        {
+          "name": "id_usuario",
+          "type": "uuid",
+          "maxLength": null,
+          "nullable": false,
+          "default": "uuid_generate_v4()",
+          "position": 1
+        },
+        {
+          "name": "nombre_usuario",
+          "type": "character varying",
+          "maxLength": 100,
+          "nullable": false,
+          "default": null,
+          "position": 2
+        },
+        {
+          "name": "contrasena",
+          "type": "character varying",
+          "maxLength": 255,
+          "nullable": false,
+          "default": null,
+          "position": 3
+        },
+        {
+          "name": "rol",
+          "type": "character varying",
+          "maxLength": 20,
+          "nullable": false,
+          "default": null,
+          "position": 4
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "position": 5
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "maxLength": null,
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "position": 6
+        }
+      ],
+      "constraints": [
+        {
+          "name": "usuarios_pkey",
+          "type": "PRIMARY KEY",
+          "column": "id_usuario",
+          "foreignTable": "usuarios",
+          "foreignColumn": "id_usuario"
+        },
+        {
+          "name": "usuarios_nombre_usuario_key",
+          "type": "UNIQUE",
+          "column": "nombre_usuario",
+          "foreignTable": "usuarios",
+          "foreignColumn": "nombre_usuario"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "usuarios_pkey",
+          "definition": "CREATE UNIQUE INDEX usuarios_pkey ON public.usuarios USING btree (id_usuario)"
+        },
+        {
+          "name": "usuarios_nombre_usuario_key",
+          "definition": "CREATE UNIQUE INDEX usuarios_nombre_usuario_key ON public.usuarios USING btree (nombre_usuario)"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    "datos_ocr.postulante_id → postulantes.id_postulante",
+    "documentos.postulante_id → postulantes.id_postulante",
+    "logs_sistema.usuario_id → usuarios.id_usuario",
+    "personas_contacto.postulante_id → postulantes.id_postulante",
+    "postulantes.colegio_id → colegios.id_colegio",
+    "preinscripciones.postulante_id → postulantes.id_postulante",
+    "preinscripciones.periodo_id → periodos_inscripcion.id_periodo",
+    "preinscripciones.creada_por_id → usuarios.id_usuario"
+  ]
+}
