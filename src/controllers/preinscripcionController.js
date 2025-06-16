@@ -38,7 +38,7 @@ class PreinscripcionController {
                 ciudad_procedencia: req.body.ciudad_procedencia,
                 
                 // Datos del colegio
-                colegio_nombre: req.body.colegio_egreso,
+                colegio_egreso: req.body.colegio_egreso,
                 colegio_tipo: req.body.colegio_tipo || 'PUBLICO',
                 
                 // Datos adicionales del formulario
