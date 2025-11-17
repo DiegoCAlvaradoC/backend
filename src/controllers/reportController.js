@@ -3,7 +3,7 @@
  * Sistema de Admisiones UCB
  */
 
-const reporteService = require('../services/reporteService');
+const reporteService = require('../services/reportService');
 const { AppError } = require('../middleware/errorHandler');
 
 /**

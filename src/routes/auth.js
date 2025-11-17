@@ -1,54 +1,63 @@
 /**
  * Rutas de Autenticación
- * /api/auth/*
+ * /routes/auth/*
  */
 
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
-const { authenticate } = require('../middleware/auth');
-const { asyncHandler } = require('../middleware/errorHandler');
-const { sanitize, requireFields } = require('../middleware/validation');
+const { authenticate, refreshAccessToken } = require('../middleware/auth');
 
-// Rutas públicas (no requieren autenticación)
-router.post('/register', 
-  sanitize,
-  requireFields(['ci', 'nombres', 'apellidos', 'email', 'password']),
-  asyncHandler(authController.register)
+// Middleware helper para manejar errores async
+const asyncHandler = (fn) => (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+// === RUTAS PÚBLICAS (no requieren autenticación) ===
+
+router.post('/register',
+    asyncHandler(authController.register)
 );
 
 router.post('/login',
-  sanitize,
-  requireFields(['password']),
-  asyncHandler(authController.login)
+    asyncHandler(authController.login)
 );
 
 router.post('/refresh',
-  asyncHandler((req, res) => {
-    const { refreshAccessToken } = require('../middleware/auth');
-    return refreshAccessToken(req, res);
-  })
+    asyncHandler(refreshAccessToken)
 );
 
-// Rutas protegidas (requieren autenticación)
-router.use(authenticate); // Middleware de autenticación para todas las rutas siguientes
+// === RUTAS PROTEGIDAS (requieren autenticación) ===
 
 router.post('/logout',
-  asyncHandler(authController.logout)
+    authenticate,
+    asyncHandler(authController.logout)
 );
 
 router.get('/profile',
-  asyncHandler(authController.getProfile)
+    authenticate,
+    asyncHandler(authController.getProfile)
 );
 
 router.patch('/profile',
-  sanitize,
-  asyncHandler(authController.updateProfile)
+    authenticate,
+    asyncHandler(authController.updateProfile)
 );
 
 router.post('/change-password',
-  requireFields(['currentPassword', 'newPassword']),
-  asyncHandler(authController.changePassword)
+    authenticate,
+    asyncHandler(authController.changePassword)
+);
+
+// === HEALTH CHECK ===
+router.get('/health',
+    asyncHandler(async (req, res) => {
+        res.json({
+            success: true,
+            message: 'Módulo de autenticación operativo',
+            timestamp: new Date().toISOString()
+        });
+    })
 );
 
 module.exports = router;

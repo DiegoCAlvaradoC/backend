@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const reporteController = require('../controllers/reporteController');
+const reporteController = require('../controllers/reportController');
 const { authenticate, authorize, ROLES } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
 
