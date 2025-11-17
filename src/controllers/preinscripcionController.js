@@ -278,8 +278,17 @@ class PreinscripcionController {
                 });
             }
 
-            // Validar estados permitidos
-            const estadosValidos = ['PENDIENTE', 'VALIDADO', 'OBSERVADO', 'RECHAZADO', 'APROBADO'];
+            // --- INICIO DE LA MODIFICACIÓN ---
+
+            // Validar estados permitidos (Sincronizado con el CHECK de la BD)
+            const estadosValidos = [
+                'PENDIENTE',
+                'APROBADA',
+                'OBSERVADA',
+                'RECHAZADA',
+                'DOCUMENTOS'
+            ];
+
             if (!estadosValidos.includes(estado.toUpperCase())) {
                 return res.status(400).json({
                     success: false,
@@ -288,8 +297,12 @@ class PreinscripcionController {
                 });
             }
 
+            // --- FIN DE LA MODIFICACIÓN ---
+
+
             console.log('📝 Actualizando estado de preinscripción:', { id, estado });
 
+            // Aseguramos que se envíe en mayúsculas al servicio
             const resultado = await preinscripcionService.actualizarEstado(id, estado.toUpperCase(), observaciones);
 
             res.json({
@@ -300,8 +313,10 @@ class PreinscripcionController {
 
         } catch (error) {
             console.error('❌ Error actualizando estado:', error);
-            
-            if (error.message.includes('no encontrada')) {
+
+            // Este chequeo de 'no encontrada' es propenso a errores si el servicio
+            // cambia el mensaje. Sería mejor un código de error.
+            if (error.message.includes('no encontrada') || error.code === 'NOT_FOUND') {
                 return res.status(404).json({
                     success: false,
                     error: 'Preinscripción no encontrada',

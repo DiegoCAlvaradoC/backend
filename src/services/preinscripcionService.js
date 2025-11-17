@@ -12,11 +12,11 @@ class PreinscripcionService {
      */
     async crearPreinscripcionCompleta(datosCompletos) {
         const client = await pool.connect();
-        
+
         try {
             console.log('🚀 Iniciando creación de preinscripción...');
             await client.query('BEGIN');
-            
+
             const {
                 datosOCR,
                 nombre,
@@ -201,7 +201,7 @@ class PreinscripcionService {
             } catch (rollbackError) {
                 console.error('❌ Error en ROLLBACK:', rollbackError);
             }
-            
+
             throw new Error(`Error al crear preinscripción: ${error.message}`);
         } finally {
             client.release();
@@ -210,60 +210,221 @@ class PreinscripcionService {
     }
 
     /**
-     * Obtener usuario admin existente
+     * Listar preinscripciones con filtros y paginación
      */
-    async obtenerUsuarioSistemaSeguro(client) {
+    async listarPreinscripciones(filtros = {}) {
         try {
-            console.log('👨‍💼 Buscando usuario admin existente...');
-            
-            let result = await client.query(`
-                SELECT id_usuario, nombre_usuario, rol
-                FROM usuarios 
-                WHERE nombre_usuario = 'admin' AND rol = 'ADMIN'
-                LIMIT 1
-            `);
+            const {
+                estado,
+                fecha_desde,
+                fecha_hasta,
+                ci,
+                nombre,
+                limit = 20,
+                offset = 0
+            } = filtros;
 
-            if (result.rows.length > 0) {
-                console.log('✅ Usuario admin encontrado:', {
-                    id: result.rows[0].id_usuario,
-                    username: result.rows[0].nombre_usuario,
-                    rol: result.rows[0].rol
-                });
-                return result.rows[0].id_usuario;
+            console.log('📋 Ejecutando listarPreinscripciones con filtros:', filtros);
+
+            // Construir WHERE dinámicamente
+            const conditions = [];
+            const params = [];
+            let paramCount = 0;
+
+            if (estado) {
+                paramCount++;
+                conditions.push(`p.estado = $${paramCount}`);
+                params.push(estado);
             }
 
-            result = await client.query(`
-                SELECT id_usuario, nombre_usuario, rol
-                FROM usuarios 
-                WHERE rol = 'ADMIN'
-                ORDER BY created_at ASC
-                LIMIT 1
-            `);
-
-            if (result.rows.length > 0) {
-                console.log('✅ Usuario ADMIN encontrado:', {
-                    id: result.rows[0].id_usuario,
-                    username: result.rows[0].nombre_usuario,
-                    rol: result.rows[0].rol
-                });
-                return result.rows[0].id_usuario;
+            if (fecha_desde) {
+                paramCount++;
+                conditions.push(`p.fecha_registro >= $${paramCount}`);
+                params.push(fecha_desde);
             }
 
-            throw new Error('No se encontró ningún usuario ADMIN en la base de datos');
+            if (fecha_hasta) {
+                paramCount++;
+                conditions.push(`p.fecha_registro <= $${paramCount}`);
+                params.push(fecha_hasta);
+            }
+
+            if (ci) {
+                paramCount++;
+                conditions.push(`post.ci ILIKE $${paramCount}`);
+                params.push(`%${ci}%`);
+            }
+
+            if (nombre) {
+                paramCount++;
+                conditions.push(`post.nombre ILIKE $${paramCount}`);
+                params.push(`%${nombre}%`);
+            }
+
+            const whereClause = conditions.length > 0
+                ? `WHERE ${conditions.join(' AND ')}`
+                : '';
+
+            console.log('🔍 WHERE clause:', whereClause);
+            console.log('📊 Params:', params);
+
+            // Consulta principal con JOIN a postulantes, colegios y carreras
+            const query = `
+            SELECT 
+                p.id_preinscripcion,
+                p.postulante_id,
+                p.periodo_id,
+                p.estado,
+                p.fecha_registro,
+                p.resumen_datos,
+                p.observaciones,
+                
+                -- Datos del Postulante
+                post.nombre,
+                post.ci,
+                post.nacionalidad,
+                post.ciudad_procedencia,
+                post.email,         -- <<< NUEVO
+                post.telefono,      -- <<< NUEVO
+                
+                -- Datos del Colegio
+                c.nombre as colegio_nombre,
+                c.tipo as colegio_tipo,
+                
+                -- Datos de la Carrera
+                car.nombre_carrera  -- <<< NUEVO
+                
+            FROM preinscripciones p
+            JOIN postulantes post ON p.postulante_id = post.id_postulante
+            LEFT JOIN colegios c ON post.colegio_id = c.id_colegio
+            LEFT JOIN carreras car ON post.id_carrera = car.id_carrera -- <<< NUEVO JOIN
+            ${whereClause}
+            ORDER BY p.fecha_registro DESC
+            LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
+        `;
+
+            params.push(limit, offset);
+
+            // Consulta para contar total de registros
+            // No es necesario añadir el JOIN a carreras aquí, no afecta el conteo
+            const countQuery = `
+            SELECT COUNT(*) as total
+            FROM preinscripciones p
+            JOIN postulantes post ON p.postulante_id = post.id_postulante
+            ${whereClause}
+        `;
+
+            const countParams = params.slice(0, paramCount);
+
+            console.log('🚀 Ejecutando consultas...');
+
+            // Ejecutar ambas consultas
+            const [dataResult, countResult] = await Promise.all([
+                pool.query(query, params),
+                pool.query(countQuery, countParams)
+            ]);
+
+            console.log('✅ Resultados obtenidos:', {
+                registros: dataResult.rows.length,
+                total: countResult.rows[0].total
+            });
+
+            // Procesar resumen_datos si existe
+            const preinscripciones = dataResult.rows.map(row => {
+                let resumenDatos = {};
+                if (row.resumen_datos) {
+                    try {
+                        resumenDatos = typeof row.resumen_datos === 'string'
+                            ? JSON.parse(row.resumen_datos)
+                            : row.resumen_datos;
+                    } catch (error) {
+                        console.error('Error parseando resumen_datos:', error);
+                    }
+                }
+
+                return {
+                    id_preinscripcion: row.id_preinscripcion,
+                    postulante: {
+                        id: row.postulante_id,
+                        nombre: row.nombre,
+                        ci: row.ci,
+                        nacionalidad: row.nacionalidad,
+                        ciudad_procedencia: row.ciudad_procedencia,
+                        email: row.email,     // <<< NUEVO
+                        telefono: row.telefono  // <<< NUEVO
+                    },
+                    colegio: row.colegio_nombre ? {
+                        nombre: row.colegio_nombre,
+                        tipo: row.colegio_tipo
+                    } : null,
+                    carrera: row.nombre_carrera ? { // <<< NUEVO
+                        nombre: row.nombre_carrera
+                    } : null,
+                    periodo_id: row.periodo_id,
+                    estado: row.estado,
+                    fecha_registro: row.fecha_registro,
+                    observaciones: row.observaciones,
+                    ...resumenDatos
+                };
+            });
+
+            return {
+                data: preinscripciones,
+                total: parseInt(countResult.rows[0].total)
+            };
 
         } catch (error) {
-            console.error('❌ Error obteniendo usuario admin:', error);
+            console.error('❌ Error en listarPreinscripciones:', error);
             throw error;
         }
     }
+    /**
+     * Actualiza el estado y observaciones de una preinscripción por su ID
+     * @param {string} id - El UUID de la preinscripción
+     * @param {string} estado - El nuevo estado (ej. 'APROBADA', 'RECHAZADA')
+     * @param {string} observaciones - Las observaciones opcionales
+     * @returns {Promise<object | null>} La preinscripción actualizada o null si no se encuentra
+     */
+    async actualizarEstado(id, estado, observaciones) {
+        try {
+            console.log(`[Service] Actualizando preinscripción ${id}:`, { estado, observaciones });
 
+            const query = `
+      UPDATE preinscripciones
+      SET 
+        estado = $1,
+        observaciones = $2,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE 
+        id_preinscripcion = $3
+      RETURNING *;
+    `;
+
+            // El orden de parámetros es importante: $1, $2, $3
+            const params = [estado, observaciones, id];
+
+            const result = await pool.query(query, params);
+
+            if (result.rows.length === 0) {
+                console.warn(`[Service] No se encontró la preinscripción con ID ${id}`);
+                return null;
+            }
+
+            console.log(`[Service] Preinscripción actualizada con éxito.`);
+            return result.rows[0];
+
+        } catch (error) {
+            console.error('❌ Error en service.actualizarEstado:', error);
+            throw error; // Lanza el error para que el controlador lo atrape
+        }
+    }
     /**
      * Obtener período activo
      */
     async obtenerPeriodoActivoSeguro(client) {
         try {
             console.log('📅 Buscando período de inscripción...');
-            
+
             let result = await client.query(`
                 SELECT id_periodo, fecha_inicio, fecha_fin, estado
                 FROM periodos_inscripcion 
@@ -301,6 +462,41 @@ class PreinscripcionService {
 
         } catch (error) {
             console.error('❌ Error obteniendo período:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Obtener usuario del sistema (fallback)
+     */
+    async obtenerUsuarioSistemaSeguro(client) {
+        try {
+            console.log('👨‍💼 Buscando usuario del sistema...');
+
+            const result = await client.query(`
+                SELECT id_usuario
+                FROM usuarios 
+                WHERE email = 'sistema@ucb.edu.bo'
+                LIMIT 1
+            `);
+
+            if (result.rows.length > 0) {
+                console.log('✅ Usuario sistema encontrado:', result.rows[0].id_usuario);
+                return result.rows[0].id_usuario;
+            }
+
+            // Si no existe, crear usuario sistema
+            const id_usuario = uuidv4();
+            await client.query(`
+                INSERT INTO usuarios (id_usuario, email, nombre, rol)
+                VALUES ($1, 'sistema@ucb.edu.bo', 'Sistema', 'ADMIN')
+            `, [id_usuario]);
+
+            console.log('✅ Usuario sistema creado:', id_usuario);
+            return id_usuario;
+
+        } catch (error) {
+            console.error('❌ Error obteniendo usuario del sistema:', error);
             throw error;
         }
     }
@@ -372,7 +568,7 @@ class PreinscripcionService {
             if (result.rows.length > 0) {
                 const id_postulante = result.rows[0].id_postulante;
                 console.log('👤 Actualizando postulante existente:', id_postulante);
-                
+
                 await client.query(`
                     UPDATE postulantes 
                     SET nombre = $1, nacionalidad = $2, ciudad_procedencia = $3, 
@@ -384,7 +580,7 @@ class PreinscripcionService {
             } else {
                 const id_postulante = uuidv4();
                 console.log('👤 Creando nuevo postulante:', id_postulante);
-                
+
                 await client.query(`
                     INSERT INTO postulantes (id_postulante, nombre, ci, nacionalidad, ciudad_procedencia, colegio_id, created_at, updated_at)
                     VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
@@ -514,7 +710,7 @@ class PreinscripcionService {
                      fecha_entrega_fotos, fecha_entrega_titulo, fecha_entrega_visa)
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 `, [
-                    id, postulante_id, docData.fotocopia_ci, docData.certificado_nacimiento, 
+                    id, postulante_id, docData.fotocopia_ci, docData.certificado_nacimiento,
                     docData.fotografias, docData.titulo_bachiller, docData.visa_estudiantil,
                     docData.fecha_entrega_ci, docData.fecha_entrega_certificado,
                     docData.fecha_entrega_fotos, docData.fecha_entrega_titulo,
@@ -537,7 +733,7 @@ class PreinscripcionService {
         const month = (fecha.getMonth() + 1).toString().padStart(2, '0');
         const day = fecha.getDate().toString().padStart(2, '0');
         const random = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
-        
+
         return `UCB${year}${month}${day}-${random}`;
     }
 
@@ -547,7 +743,7 @@ class PreinscripcionService {
     async healthCheck() {
         try {
             const dbResult = await pool.query('SELECT NOW() as timestamp, version() as version');
-            
+
             return {
                 database: {
                     connected: true,
