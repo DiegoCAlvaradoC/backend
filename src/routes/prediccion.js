@@ -1,38 +1,34 @@
-/**
- * Rutas de Predicción ML
- * /api/prediccion/*
- */
-
+// routes/prediccion.js
 const express = require('express');
 const router = express.Router();
 const prediccionController = require('../controllers/prediccionController');
-const { authenticate, authorize, ROLES } = require('../middleware/auth');
-const { asyncHandler } = require('../middleware/errorHandler');
 
-// Todas las rutas requieren autenticación
-router.use(authenticate);
+/**
+ * Rutas de Predicción ML
+ */
 
-// Solo ADMIN y OPERADOR_ADMISIONES pueden acceder a predicciones
-router.use(authorize([ROLES.ADMIN, ROLES.OPERADOR_ADMISIONES]));
+// Obtener datos históricos
+router.get('/datos-historicos', prediccionController.obtenerDatosHistoricos);
 
-router.post('/inscripciones',
-  asyncHandler(prediccionController.predecirInscripciones)
-);
+// Generar predicción
+router.post('/inscripciones', prediccionController.predecirInscripciones);
 
-router.post('/carrera',
-  asyncHandler(prediccionController.predecirPorCarrera)
-);
+// Obtener historial de predicciones
+router.get('/historial', prediccionController.obtenerHistorial);
 
-router.get('/scoring/:preinscripcion_id',
-  asyncHandler(prediccionController.calcularScoring)
-);
+// Exportar predicción a PDF
+router.post('/exportar/pdf', prediccionController.exportarPDF);
 
-router.get('/desercion/:postulante_id',
-  asyncHandler(prediccionController.predecirDesercion)
-);
+// Exportar predicción a Excel
+router.post('/exportar/excel', prediccionController.exportarExcel);
 
-router.get('/health',
-  asyncHandler(prediccionController.healthCheck)
-);
+// Predecir por carrera específica
+router.post('/carrera', prediccionController.predecirPorCarrera);
+
+// Calcular scoring de postulante
+router.get('/scoring/:preinscripcion_id', prediccionController.calcularScoring);
+
+// Health check
+router.get('/health', prediccionController.healthCheck);
 
 module.exports = router;

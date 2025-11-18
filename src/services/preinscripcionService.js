@@ -100,7 +100,7 @@ class PreinscripcionService {
             console.log('👨‍💼 Paso 5: Obteniendo usuario del sistema...');
             let usuario_sistema_id;
             try {
-                usuario_sistema_id = usuario_id || await this.obtenerUsuarioSistemaSeguro(client);
+                usuario_sistema_id = usuario_id || await this.obtenerUsuarioSistema(client);
                 console.log('✅ Usuario obtenido:', usuario_sistema_id);
             } catch (error) {
                 console.error('❌ Error obteniendo usuario:', error);
@@ -466,40 +466,58 @@ class PreinscripcionService {
         }
     }
 
-    /**
-     * Obtener usuario del sistema (fallback)
-     */
-    async obtenerUsuarioSistemaSeguro(client) {
+    async obtenerUsuarioSistema(client) {
         try {
-            console.log('👨‍💼 Buscando usuario del sistema...');
+            console.log('🔍 Buscando usuario del sistema para preinscripciones web...');
 
+            // Buscar usuario web_system existente
             const result = await client.query(`
-                SELECT id_usuario
-                FROM usuarios 
-                WHERE email = 'sistema@ucb.edu.bo'
-                LIMIT 1
-            `);
+            SELECT id_usuario, nombre_usuario, rol
+            FROM usuarios 
+            WHERE nombre_usuario = 'web_system'
+            LIMIT 1
+        `);
 
-            if (result.rows.length > 0) {
-                console.log('✅ Usuario sistema encontrado:', result.rows[0].id_usuario);
-                return result.rows[0].id_usuario;
+            if (result.rows.length === 0) {
+                console.log('⚠️ No existe usuario web_system, creando uno...');
+
+                const id_usuario = uuidv4();
+
+                // Crear usuario con rol PERSONAL_ADMISIONES
+                // (el más apropiado para procesar solicitudes de admisión)
+                await client.query(`
+                INSERT INTO usuarios (id_usuario, nombre_usuario, contrasena, rol)
+                VALUES ($1, $2, $3, $4)
+            `, [
+                    id_usuario,
+                    'web_system',
+                    'web_system_no_login', // Password placeholder
+                    'PERSONAL_ADMISIONES' // ✅ ROL VÁLIDO
+                ]);
+
+                console.log('✅ Usuario web_system creado con éxito:', id_usuario);
+                console.log('✅ Rol asignado: PERSONAL_ADMISIONES');
+                return id_usuario;
             }
 
-            // Si no existe, crear usuario sistema
-            const id_usuario = uuidv4();
-            await client.query(`
-                INSERT INTO usuarios (id_usuario, email, nombre, rol)
-                VALUES ($1, 'sistema@ucb.edu.bo', 'Sistema', 'ADMIN')
-            `, [id_usuario]);
-
-            console.log('✅ Usuario sistema creado:', id_usuario);
-            return id_usuario;
+            console.log('✅ Usuario web_system encontrado:', result.rows[0].id_usuario);
+            console.log('✅ Rol actual:', result.rows[0].rol);
+            return result.rows[0].id_usuario;
 
         } catch (error) {
             console.error('❌ Error obteniendo usuario del sistema:', error);
-            throw error;
+
+            // Mensaje de error más específico
+            if (error.code === '23514') { // Check constraint violation
+                console.error('💡 ERROR: El rol no es válido');
+                console.error('💡 Roles permitidos: ADMINISTRADOR, PERSONAL_ADMISIONES');
+            }
+
+            throw new Error(`Error obteniendo usuario del sistema: ${error.message}`);
         }
     }
+
+
 
     /**
      * Crear preinscripción
@@ -723,7 +741,144 @@ class PreinscripcionService {
             throw error;
         }
     }
+    /**
+     * Obtener estadísticas de preinscripciones
+     */
+    async obtenerEstadisticas(filtros = {}) {
+        try {
+            const { fecha_desde, fecha_hasta } = filtros;
 
+            console.log('📊 Generando estadísticas con filtros:', filtros);
+
+            // Construir WHERE dinámicamente
+            const conditions = [];
+            const params = [];
+            let paramCount = 0;
+
+            if (fecha_desde) {
+                paramCount++;
+                conditions.push(`p.fecha_registro >= $${paramCount}`);
+                params.push(fecha_desde);
+            }
+
+            if (fecha_hasta) {
+                paramCount++;
+                conditions.push(`p.fecha_registro <= $${paramCount}`);
+                params.push(fecha_hasta);
+            }
+
+            const whereClause = conditions.length > 0
+                ? `WHERE ${conditions.join(' AND ')}`
+                : '';
+
+            // 1. Resumen general (formato requerido por el dashboard)
+            const resumenQuery = `
+                SELECT 
+                    COUNT(*) as total_inscripciones,
+                    COUNT(*) FILTER (WHERE DATE(p.fecha_registro) = CURRENT_DATE) as inscripciones_hoy,
+                    COUNT(*) FILTER (WHERE p.estado = 'PENDIENTE') as pendientes_revision,
+                    COUNT(*) FILTER (WHERE p.estado = 'APROBADA') as aprobadas,
+                    COUNT(*) FILTER (WHERE p.estado = 'RECHAZADA') as rechazadas,
+                    COUNT(*) FILTER (WHERE p.estado = 'DOCUMENTOS') as documentos_faltantes
+                FROM preinscripciones p
+                ${whereClause}
+            `;
+
+            const resumenResult = await pool.query(resumenQuery, params);
+            const resumen = {
+                totalInscripciones: parseInt(resumenResult.rows[0].total_inscripciones || 0),
+                inscripcionesHoy: parseInt(resumenResult.rows[0].inscripciones_hoy || 0),
+                pendientesRevision: parseInt(resumenResult.rows[0].pendientes_revision || 0),
+                aprobadas: parseInt(resumenResult.rows[0].aprobadas || 0),
+                rechazadas: parseInt(resumenResult.rows[0].rechazadas || 0),
+                documentosFaltantes: parseInt(resumenResult.rows[0].documentos_faltantes || 0)
+            };
+
+            // 2. Distribución por carrera
+            const carrerasQuery = `
+                SELECT 
+                    COALESCE(car.nombre_carrera, 'Sin carrera') as carrera,
+                    COUNT(*) as cantidad,
+                    ROUND(COUNT(*) * 100.0 / NULLIF((SELECT COUNT(*) FROM preinscripciones p2 ${whereClause}), 0), 2) as porcentaje
+                FROM preinscripciones p
+                JOIN postulantes post ON p.postulante_id = post.id_postulante
+                LEFT JOIN carreras car ON post.id_carrera = car.id_carrera
+                ${whereClause}
+                GROUP BY car.nombre_carrera
+                ORDER BY cantidad DESC
+                LIMIT 10
+            `;
+
+            const carrerasResult = await pool.query(carrerasQuery, params);
+            const porCarrera = carrerasResult.rows.map(row => ({
+                carrera: row.carrera,
+                cantidad: parseInt(row.cantidad),
+                porcentaje: parseFloat(row.porcentaje || 0)
+            }));
+
+            // 3. Distribución por colegio
+            const colegiosQuery = `
+                SELECT 
+                    COALESCE(c.nombre, 'Sin colegio') as colegio,
+                    COUNT(*) as cantidad,
+                    ROUND(COUNT(*) * 100.0 / NULLIF((SELECT COUNT(*) FROM preinscripciones p2 ${whereClause}), 0), 2) as porcentaje
+                FROM preinscripciones p
+                JOIN postulantes post ON p.postulante_id = post.id_postulante
+                LEFT JOIN colegios c ON post.colegio_id = c.id_colegio
+                ${whereClause}
+                GROUP BY c.nombre
+                ORDER BY cantidad DESC
+                LIMIT 10
+            `;
+
+            const colegiosResult = await pool.query(colegiosQuery, params);
+            const porColegio = colegiosResult.rows.map(row => ({
+                colegio: row.colegio,
+                cantidad: parseInt(row.cantidad),
+                porcentaje: parseFloat(row.porcentaje || 0)
+            }));
+
+            // 4. Tendencia semanal (últimos 7 días)
+            const tendenciaQuery = `
+                SELECT 
+                    TO_CHAR(p.fecha_registro, 'Day') as dia,
+                    DATE(p.fecha_registro) as fecha,
+                    COUNT(*) as cantidad
+                FROM preinscripciones p
+                WHERE p.fecha_registro >= CURRENT_DATE - INTERVAL '7 days'
+                GROUP BY DATE(p.fecha_registro), TO_CHAR(p.fecha_registro, 'Day')
+                ORDER BY fecha ASC
+            `;
+
+            const tendenciaResult = await pool.query(tendenciaQuery);
+            const semana = tendenciaResult.rows.map(row => ({
+                dia: row.dia.trim(),
+                cantidad: parseInt(row.cantidad)
+            }));
+
+            console.log('✅ Estadísticas generadas:', {
+                total: resumen.totalInscripciones,
+                carreras: porCarrera.length,
+                colegios: porColegio.length,
+                dias: semana.length
+            });
+
+            return {
+                resumen,
+                distribucion: {
+                    porCarrera,
+                    porColegio
+                },
+                tendencia: {
+                    semana
+                }
+            };
+
+        } catch (error) {
+            console.error('❌ Error en obtenerEstadisticas:', error);
+            throw error;
+        }
+    }
     /**
      * Generar código de seguimiento único
      */
