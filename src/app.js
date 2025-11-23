@@ -22,6 +22,7 @@ const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const reportesRoutes = require('./routes/reportes');
 const prediccionRoutes = require('./routes/prediccion');
+const periodsRoutes = require('./routes/periods'); // ✅ CORREGIDO: sin "/" al inicio
 
 // ====================================================================
 // CREAR APLICACIÓN EXPRESS
@@ -193,6 +194,7 @@ app.get('/', (req, res) => {
       ocr: '/api/ocr/*',
       preinscripciones: '/api/preinscripciones/*',
       admin: '/api/admin/*',
+      periods: '/api/admin/periodos/*', // ✅ Períodos bajo /api/admin
       reportes: '/api/reportes/*',
       prediccion: '/api/prediccion/*',
       health: '/health',
@@ -203,6 +205,7 @@ app.get('/', (req, res) => {
       '📷 OCR para carnets de identidad',
       '📝 Preinscripciones con validación completa',
       '👨‍💼 Panel administrativo completo',
+      '📅 Gestión de períodos de inscripción', // ✅ NUEVO
       '📊 Reportería y estadísticas avanzadas',
       '🤖 Predicciones con Machine Learning',
       '🔒 Control de acceso basado en roles (RBAC)',
@@ -224,6 +227,7 @@ app.get('/api/info', (req, res) => {
       ocr: 'Reconocimiento óptico de carnets bolivianos',
       preinscripciones: 'Sistema completo de preinscripciones',
       admin: 'Gestión administrativa y períodos',
+      periods: 'Gestión de períodos de inscripción', // ✅ NUEVO
       reportes: 'Reportería y estadísticas',
       prediccion: 'Machine Learning y predicciones'
     },
@@ -244,6 +248,10 @@ app.get('/api/info', (req, res) => {
         endpoints: 11,
         features: ['Period Management', 'User Management', 'Audit Logs']
       },
+      periods: { // ✅ NUEVO
+        endpoints: 7,
+        features: ['CRUD Complete', 'Active Period Management', 'Validation']
+      },
       reports: {
         endpoints: 8,
         features: ['Statistics', 'Trends', 'Demographics', 'CSV Export']
@@ -253,7 +261,7 @@ app.get('/api/info', (req, res) => {
         features: ['Linear Regression', 'Scoring', 'Risk Analysis']
       }
     },
-    totalEndpoints: 41,
+    totalEndpoints: 48, // ✅ Actualizado: 41 + 7 = 48
     timestamp: new Date().toISOString()
   });
 });
@@ -268,6 +276,7 @@ app.get('/health', async (req, res) => {
       preinscripciones: { status: 'unknown' },
       auth: { status: 'operational' },
       admin: { status: 'operational' },
+      periods: { status: 'operational' }, // ✅ NUEVO
       reportes: { status: 'operational' },
       prediccion: { status: 'operational' }
     };
@@ -305,6 +314,7 @@ app.get('/health', async (req, res) => {
         preinscripciones: servicesHealth.preinscripciones.status,
         auth: servicesHealth.auth.status,
         admin: servicesHealth.admin.status,
+        periods: servicesHealth.periods.status, // ✅ NUEVO
         reportes: servicesHealth.reportes.status,
         prediccion: servicesHealth.prediccion.status
       },
@@ -344,6 +354,10 @@ app.use('/api/preinscripciones', preinscripcionLimiter, preinscripcionRoutes);
 // 👨‍💼 MÓDULO ADMINISTRATIVO
 // Las rutas ya tienen authenticate y authorize internamente
 app.use('/api/admin', adminRoutes);
+
+// 📅 MÓDULO DE PERÍODOS (bajo /api/admin/periodos)
+// ✅ NUEVO - Gestión de períodos de inscripción
+app.use('/api/admin', periodsRoutes);
 
 // 📊 MÓDULO DE REPORTES
 // Las rutas ya tienen authenticate y authorize internamente
@@ -410,6 +424,7 @@ app.use('*', (req, res) => {
           'GET /api/admin/periodos/:id',
           'PATCH /api/admin/periodos/:id',
           'DELETE /api/admin/periodos/:id',
+          'GET /api/admin/health',
           'GET /api/admin/usuarios',
           'POST /api/admin/usuarios',
           'PATCH /api/admin/usuarios/:id/rol',
@@ -593,17 +608,20 @@ const startServer = async () => {
       console.log('   PATCH /api/preinscripciones/:id/estado - Actualizar estado (🔒)');
 
       console.log('\n   👨‍💼 MÓDULO ADMINISTRACIÓN (11 endpoints) 🔒:');
+      console.log('   GET    /api/admin/usuarios - Listar usuarios');
+      console.log('   POST   /api/admin/usuarios - Crear usuario');
+      console.log('   PATCH  /api/admin/usuarios/:id/rol - Cambiar rol');
+      console.log('   PATCH  /api/admin/usuarios/:id/estado - Cambiar estado');
+      console.log('   GET    /api/admin/logs - Consultar logs de auditoría');
+
+      console.log('\n   📅 MÓDULO PERÍODOS (7 endpoints) 🔒:'); // ✅ NUEVO
       console.log('   POST   /api/admin/periodos - Crear período');
       console.log('   GET    /api/admin/periodos - Listar períodos');
       console.log('   GET    /api/admin/periodos/activo/current - Período activo');
       console.log('   GET    /api/admin/periodos/:id - Obtener período');
       console.log('   PATCH  /api/admin/periodos/:id - Actualizar período');
       console.log('   DELETE /api/admin/periodos/:id - Eliminar período');
-      console.log('   GET    /api/admin/usuarios - Listar usuarios');
-      console.log('   POST   /api/admin/usuarios - Crear usuario');
-      console.log('   PATCH  /api/admin/usuarios/:id/rol - Cambiar rol');
-      console.log('   PATCH  /api/admin/usuarios/:id/estado - Cambiar estado');
-      console.log('   GET    /api/admin/logs - Consultar logs de auditoría');
+      console.log('   GET    /api/admin/health - Health check');
 
       console.log('\n   📊 MÓDULO REPORTES (8 endpoints) 🔒:');
       console.log('   GET /api/reportes/estadisticas - Estadísticas generales');
@@ -626,10 +644,10 @@ const startServer = async () => {
       console.log('🤖 = Requiere rol admin o staff');
 
       console.log('\n📈 ESTADÍSTICAS DEL SISTEMA:');
-      console.log('   • Total de módulos: 6');
-      console.log('   • Total de endpoints: 41');
+      console.log('   • Total de módulos: 7'); // ✅ Actualizado
+      console.log('   • Total de endpoints: 48'); // ✅ Actualizado
       console.log('   • Endpoints públicos: 14');
-      console.log('   • Endpoints protegidos: 27');
+      console.log('   • Endpoints protegidos: 34'); // ✅ Actualizado
 
       console.log('\n🎯 Listo para recibir requests del frontend!');
       console.log('========================================\n');
