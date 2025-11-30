@@ -80,8 +80,8 @@ class AuthController {
             res.status(500).json({
                 success: false,
                 error: 'Error en el registro',
-                message: process.env.NODE_ENV === 'development' 
-                    ? error.message 
+                message: process.env.NODE_ENV === 'development'
+                    ? error.message
                     : 'Error al registrar usuario'
             });
         }
@@ -275,7 +275,7 @@ class AuthController {
 
             res.json({
                 success: true,
-                data: perfil
+                data: { usuario: perfil }
             });
 
         } catch (error) {
@@ -308,7 +308,7 @@ class AuthController {
             res.json({
                 success: true,
                 message: 'Perfil actualizado exitosamente',
-                data: perfilActualizado
+                data: { usuario: perfilActualizado }
             });
 
         } catch (error) {
@@ -399,8 +399,8 @@ class AuthController {
             res.json({
                 success: true,
                 message: result.message,
-                ...(process.env.NODE_ENV === 'development' && result.resetToken && { 
-                    resetToken: result.resetToken 
+                ...(process.env.NODE_ENV === 'development' && result.resetToken && {
+                    resetToken: result.resetToken
                 })
             });
 

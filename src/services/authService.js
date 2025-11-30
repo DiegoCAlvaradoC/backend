@@ -1,5 +1,5 @@
 // services/authService.js
-const pool = require('../config/database');
+const { pool } = require('../config/database'); // ✅ CORREGIDO: Desestructurar pool
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -17,10 +17,10 @@ class AuthService {
      */
     async registrarUsuario(userData) {
         const client = await pool.connect();
-        
+
         try {
             await client.query('BEGIN');
-            
+
             const {
                 email,
                 password,
@@ -36,7 +36,7 @@ class AuthService {
                 'SELECT id FROM auth.usuarios WHERE email = $1',
                 [email]
             );
-            
+
             if (emailExists.rows.length > 0) {
                 throw new Error('El email ya está registrado');
             }
@@ -47,7 +47,7 @@ class AuthService {
                     'SELECT id FROM auth.usuarios WHERE ci = $1',
                     [ci]
                 );
-                
+
                 if (ciExists.rows.length > 0) {
                     throw new Error('El CI ya está registrado');
                 }
@@ -91,13 +91,14 @@ class AuthService {
                 usuario: {
                     id: usuario.id,
                     email: usuario.email,
-                    nombre_completo: usuario.nombre_completo,
+                    nombreCompleto: usuario.nombre_completo,
                     ci: usuario.ci,
                     celular: usuario.celular,
                     rol: usuario.rol,
                     estado: usuario.estado
                 },
-                tokens
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken
             };
 
         } catch (error) {
@@ -116,7 +117,7 @@ class AuthService {
      */
     async login(email, password) {
         const client = await pool.connect();
-        
+
         try {
             // Buscar usuario
             const query = `
@@ -125,7 +126,7 @@ class AuthService {
                 FROM auth.usuarios
                 WHERE email = $1
             `;
-            
+
             const result = await client.query(query, [email]);
 
             if (result.rows.length === 0) {
@@ -173,13 +174,14 @@ class AuthService {
                 usuario: {
                     id: usuario.id,
                     email: usuario.email,
-                    nombre_completo: usuario.nombre_completo,
+                    nombreCompleto: usuario.nombre_completo,
                     ci: usuario.ci,
                     celular: usuario.celular,
                     rol: usuario.rol,
                     estado: usuario.estado
                 },
-                tokens
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken
             };
 
         } finally {
@@ -331,7 +333,7 @@ class AuthService {
      */
     async logout(usuarioId, refreshToken) {
         const client = await pool.connect();
-        
+
         try {
             await client.query('BEGIN');
 
@@ -412,7 +414,7 @@ class AuthService {
      */
     async cambiarPassword(usuarioId, passwordActual, passwordNuevo) {
         const client = await pool.connect();
-        
+
         try {
             // Obtener usuario
             const result = await client.query(
@@ -461,7 +463,7 @@ class AuthService {
      */
     async solicitarResetPassword(email) {
         const client = await pool.connect();
-        
+
         try {
             // Buscar usuario
             const result = await client.query(
@@ -508,7 +510,7 @@ class AuthService {
      */
     async resetearPassword(token, nuevoPassword) {
         const client = await pool.connect();
-        
+
         try {
             await client.query('BEGIN');
 
@@ -579,7 +581,18 @@ class AuthService {
             throw new Error('Usuario no encontrado');
         }
 
-        return result.rows[0];
+        const user = result.rows[0];
+        return {
+            id: user.id,
+            email: user.email,
+            nombreCompleto: user.nombre_completo,
+            ci: user.ci,
+            celular: user.celular,
+            rol: user.rol,
+            estado: user.estado,
+            fechaCreacion: user.fecha_creacion,
+            ultimoAcceso: user.ultimo_acceso
+        };
     }
 
     /**
@@ -602,7 +615,15 @@ class AuthService {
             throw new Error('Usuario no encontrado');
         }
 
-        return result.rows[0];
+        const user = result.rows[0];
+        return {
+            id: user.id,
+            email: user.email,
+            nombreCompleto: user.nombre_completo,
+            ci: user.ci,
+            celular: user.celular,
+            rol: user.rol
+        };
     }
 
     /**

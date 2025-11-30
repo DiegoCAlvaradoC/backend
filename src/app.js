@@ -22,7 +22,8 @@ const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const reportesRoutes = require('./routes/reportes');
 const prediccionRoutes = require('./routes/prediccion');
-const periodsRoutes = require('./routes/periods'); // ✅ CORREGIDO: sin "/" al inicio
+const periodsRoutes = require('./routes/periods');
+const adminUsuariosRoutes = require('./routes/admin-usuarios');
 
 // ====================================================================
 // CREAR APLICACIÓN EXPRESS
@@ -367,6 +368,7 @@ app.use('/api/reportes', reportesRoutes);
 // Las rutas ya tienen authenticate y authorize internamente
 app.use('/api/prediccion', prediccionRoutes);
 
+app.use('/api/admin/usuarios', adminUsuariosRoutes);
 // ====================================================================
 // MIDDLEWARE DE MANEJO DE ERRORES
 // ====================================================================
