@@ -6,7 +6,7 @@ const pool = require('../config/database');
  * Constantes de roles del sistema
  */
 const ROLES = {
-    ADMIN: 'admin',
+    ADMIN: 'ADMINISTRADOR',
     OPERADOR_ADMISIONES: 'staff',
     USUARIO: 'user'
 };

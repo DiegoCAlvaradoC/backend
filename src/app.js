@@ -418,7 +418,7 @@ app.use('*', (req, res) => {
       admin: {
         base: '/api/admin',
         authentication: 'required',
-        role: 'admin/staff',
+        role: 'ADMINISTRADOR/staff',
         endpoints: [
           'POST /api/admin/periodos',
           'GET /api/admin/periodos',
@@ -437,7 +437,7 @@ app.use('*', (req, res) => {
       reportes: {
         base: '/api/reportes',
         authentication: 'required',
-        role: 'admin/staff/revisor',
+        role: 'ADMINISTRADOR/staff/revisor',
         endpoints: [
           'GET /api/reportes/estadisticas',
           'GET /api/reportes/distribucion-carreras',
@@ -452,7 +452,7 @@ app.use('*', (req, res) => {
       prediccion: {
         base: '/api/prediccion',
         authentication: 'required',
-        role: 'admin/staff',
+        role: 'ADMINISTRADOR/staff',
         endpoints: [
           'POST /api/prediccion/inscripciones',
           'POST /api/prediccion/carrera',

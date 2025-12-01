@@ -1,11 +1,11 @@
+
 // services/adminService.js
 
-const pool = require('../config/database');
+const { pool } = require('../config/database');
 const bcrypt = require('bcrypt');
-
 class AdminService {
 
-  /**
+/**
    * GESTIÓN DE PERÍODOS ACADÉMICOS
    */
 
@@ -20,12 +20,10 @@ class AdminService {
 
       const {
         nombre,
-        gestion,
+        descripcion,
         fecha_inicio,
         fecha_fin,
-        cupo_maximo,
-        activo = true,
-        observaciones
+        estado = true
       } = dataPeriodo;
 
       // Validar fechas
@@ -34,27 +32,25 @@ class AdminService {
       }
 
       // Si se marca como activo, desactivar otros períodos activos
-      if (activo) {
+      if (estado) {
         await client.query(
-          'UPDATE admisiones.periodos_academicos SET activo = false WHERE activo = true'
+          'UPDATE periodos_inscripcion SET estado = false WHERE estado = true'
         );
       }
 
       const query = `
-        INSERT INTO admisiones.periodos_academicos 
-        (nombre, gestion, fecha_inicio, fecha_fin, cupo_maximo, activo, observaciones, fecha_creacion)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+        INSERT INTO periodos_inscripcion 
+        (nombre, descripcion, fecha_inicio, fecha_fin, estado, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
         RETURNING *
       `;
 
       const result = await client.query(query, [
         nombre,
-        gestion,
+        descripcion,
         fecha_inicio,
         fecha_fin,
-        cupo_maximo,
-        activo,
-        observaciones
+        estado
       ]);
 
       await client.query('COMMIT');
@@ -74,20 +70,15 @@ class AdminService {
    */
   async obtenerPeriodos(filtros = {}) {
     try {
-      const { activo, gestion, limit = 20, offset = 0 } = filtros;
+      const { estado, limit = 20, offset = 0 } = filtros;
 
       let whereConditions = [];
       let params = [];
       let paramCount = 1;
 
-      if (activo !== undefined) {
-        whereConditions.push(`activo = $${paramCount++}`);
-        params.push(activo);
-      }
-
-      if (gestion) {
-        whereConditions.push(`gestion = $${paramCount++}`);
-        params.push(gestion);
+      if (estado !== undefined) {
+        whereConditions.push(`pi.estado = $${paramCount++}`);
+        params.push(estado);
       }
 
       const whereClause = whereConditions.length > 0 
@@ -98,14 +89,21 @@ class AdminService {
 
       const query = `
         SELECT 
-          pa.*,
-          COUNT(p.id) as total_preinscripciones,
+          pi.id_periodo,
+          pi.nombre,
+          pi.descripcion,
+          pi.fecha_inicio,
+          pi.fecha_fin,
+          pi.estado,
+          pi.created_at,
+          pi.updated_at,
+          COUNT(p.id_preinscripcion) as total_preinscripciones,
           COUNT(CASE WHEN p.estado = 'APROBADA' THEN 1 END) as aprobadas
-        FROM admisiones.periodos_academicos pa
-        LEFT JOIN admisiones.preinscripciones p ON pa.id = p.periodo_id
+        FROM periodos_inscripcion pi
+        LEFT JOIN preinscripciones p ON pi.id_periodo = p.periodo_id
         ${whereClause}
-        GROUP BY pa.id
-        ORDER BY pa.fecha_inicio DESC
+        GROUP BY pi.id_periodo, pi.nombre, pi.descripcion, pi.fecha_inicio, pi.fecha_fin, pi.estado, pi.created_at, pi.updated_at
+        ORDER BY pi.fecha_inicio DESC
         LIMIT $${paramCount++} OFFSET $${paramCount}
       `;
 
@@ -114,7 +112,7 @@ class AdminService {
       // Obtener total
       const countQuery = `
         SELECT COUNT(*) as total
-        FROM admisiones.periodos_academicos
+        FROM periodos_inscripcion pi
         ${whereClause}
       `;
 
@@ -140,16 +138,23 @@ class AdminService {
     try {
       const query = `
         SELECT 
-          pa.*,
-          COUNT(p.id) as total_preinscripciones,
+          pi.id_periodo,
+          pi.nombre,
+          pi.descripcion,
+          pi.fecha_inicio,
+          pi.fecha_fin,
+          pi.estado,
+          pi.created_at,
+          pi.updated_at,
+          COUNT(p.id_preinscripcion) as total_preinscripciones,
           COUNT(CASE WHEN p.estado = 'PENDIENTE' THEN 1 END) as pendientes,
           COUNT(CASE WHEN p.estado = 'EN_REVISION' THEN 1 END) as en_revision,
           COUNT(CASE WHEN p.estado = 'APROBADA' THEN 1 END) as aprobadas,
           COUNT(CASE WHEN p.estado = 'RECHAZADA' THEN 1 END) as rechazadas
-        FROM admisiones.periodos_academicos pa
-        LEFT JOIN admisiones.preinscripciones p ON pa.id = p.periodo_id
-        WHERE pa.id = $1
-        GROUP BY pa.id
+        FROM periodos_inscripcion pi
+        LEFT JOIN preinscripciones p ON pi.id_periodo = p.periodo_id
+        WHERE pi.id_periodo = $1
+        GROUP BY pi.id_periodo, pi.nombre, pi.descripcion, pi.fecha_inicio, pi.fecha_fin, pi.estado, pi.created_at, pi.updated_at
       `;
 
       const result = await pool.query(query, [periodoId]);
@@ -172,9 +177,18 @@ class AdminService {
   async obtenerPeriodoActivo() {
     try {
       const query = `
-        SELECT * FROM admisiones.periodos_academicos
-        WHERE activo = true
-        ORDER BY fecha_creacion DESC
+        SELECT 
+          id_periodo,
+          nombre,
+          descripcion,
+          fecha_inicio,
+          fecha_fin,
+          estado,
+          created_at,
+          updated_at
+        FROM periodos_inscripcion
+        WHERE estado = true
+        ORDER BY created_at DESC
         LIMIT 1
       `;
 
@@ -199,18 +213,16 @@ class AdminService {
 
       const {
         nombre,
-        gestion,
+        descripcion,
         fecha_inicio,
         fecha_fin,
-        cupo_maximo,
-        activo,
-        observaciones
+        estado
       } = datosActualizacion;
 
       // Si se activa este período, desactivar otros
-      if (activo === true) {
+      if (estado === true) {
         await client.query(
-          'UPDATE admisiones.periodos_academicos SET activo = false WHERE id != $1',
+          'UPDATE periodos_inscripcion SET estado = false WHERE id_periodo != $1',
           [periodoId]
         );
       }
@@ -223,9 +235,9 @@ class AdminService {
         updates.push(`nombre = $${paramCount++}`);
         values.push(nombre);
       }
-      if (gestion !== undefined) {
-        updates.push(`gestion = $${paramCount++}`);
-        values.push(gestion);
+      if (descripcion !== undefined) {
+        updates.push(`descripcion = $${paramCount++}`);
+        values.push(descripcion);
       }
       if (fecha_inicio !== undefined) {
         updates.push(`fecha_inicio = $${paramCount++}`);
@@ -235,17 +247,9 @@ class AdminService {
         updates.push(`fecha_fin = $${paramCount++}`);
         values.push(fecha_fin);
       }
-      if (cupo_maximo !== undefined) {
-        updates.push(`cupo_maximo = $${paramCount++}`);
-        values.push(cupo_maximo);
-      }
-      if (activo !== undefined) {
-        updates.push(`activo = $${paramCount++}`);
-        values.push(activo);
-      }
-      if (observaciones !== undefined) {
-        updates.push(`observaciones = $${paramCount++}`);
-        values.push(observaciones);
+      if (estado !== undefined) {
+        updates.push(`estado = $${paramCount++}`);
+        values.push(estado);
       }
 
       if (updates.length === 0) {
@@ -255,9 +259,9 @@ class AdminService {
       values.push(periodoId);
 
       const query = `
-        UPDATE admisiones.periodos_academicos
-        SET ${updates.join(', ')}, fecha_actualizacion = NOW()
-        WHERE id = $${paramCount}
+        UPDATE periodos_inscripcion
+        SET ${updates.join(', ')}, updated_at = NOW()
+        WHERE id_periodo = $${paramCount}
         RETURNING *
       `;
 
@@ -287,7 +291,7 @@ class AdminService {
       // Verificar que no tenga preinscripciones
       const checkQuery = `
         SELECT COUNT(*) as total
-        FROM admisiones.preinscripciones
+        FROM preinscripciones
         WHERE periodo_id = $1
       `;
 
@@ -298,9 +302,8 @@ class AdminService {
       }
 
       const query = `
-        UPDATE admisiones.periodos_academicos
-        SET activo = false, deleted_at = NOW()
-        WHERE id = $1
+        DELETE FROM periodos_inscripcion
+        WHERE id_periodo = $1
         RETURNING *
       `;
 
@@ -317,7 +320,6 @@ class AdminService {
       throw error;
     }
   }
-
   /**
    * GESTIÓN DE USUARIOS
    */
@@ -550,7 +552,7 @@ class AdminService {
   async healthCheck() {
     try {
       const usuarios = await pool.query('SELECT COUNT(*) FROM auth.usuarios');
-      const periodos = await pool.query('SELECT COUNT(*) FROM admisiones.periodos_academicos');
+      const periodos = await pool.query('SELECT COUNT(*) FROM admisiones.periodos_inscripcion');
 
       return {
         status: 'healthy',
