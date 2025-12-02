@@ -198,7 +198,7 @@ const validatePeriodoActivo = async (req, res, next) => {
 
     const periodoQuery = await pool.query(
       `SELECT id, nombre, activo, fecha_inicio, fecha_fin
-       FROM admisiones.periodos_academicos
+       FROM periodos_inscripcion
        WHERE id = $1`,
       [periodo_id]
     );

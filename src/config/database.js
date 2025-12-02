@@ -9,8 +9,8 @@ const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'admin',
   max: 20, // Máximo número de conexiones en el pool
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  client_encoding: 'utf8',
+  connectionTimeoutMillis: 5000,
 });
 
 // Función para testear la conexión
