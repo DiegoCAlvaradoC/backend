@@ -25,16 +25,11 @@ const prediccionRoutes = require('./routes/prediccion');
 const periodsRoutes = require('./routes/periods');
 const adminUsuariosRoutes = require('./routes/admin-usuarios');
 
-// ====================================================================
 // CREAR APLICACIÓN EXPRESS
-// ====================================================================
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ====================================================================
-// CONFIGURACIÓN DE CORS MEJORADA
-// ====================================================================
+// CONFIGURACIÓN DE CORS
 
 const corsOptions = {
   origin: [
@@ -53,10 +48,6 @@ const corsOptions = {
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
-
-// ====================================================================
-// RATE LIMITING CONFIGURADO
-// ====================================================================
 
 // Rate limiting general
 const generalLimiter = rateLimit({
@@ -98,9 +89,7 @@ const authLimiter = rateLimit({
   legacyHeaders: false
 });
 
-// ====================================================================
 // MIDDLEWARES GLOBALES
-// ====================================================================
 
 // Seguridad HTTP headers
 app.use(helmet({
@@ -135,29 +124,25 @@ app.use(express.urlencoded({
 // Servir archivos estáticos (uploads)
 app.use('/uploads', express.static('uploads'));
 
-// ====================================================================
-// MIDDLEWARE DE LOGGING PERSONALIZADO MEJORADO
-// ====================================================================
+// MIDDLEWARE DE LOGGING PERSONALIZADO
 
 app.use((req, res, next) => {
   const start = Date.now();
 
   // Log de request
-  console.log(`🌐 ${new Date().toISOString()} - ${req.method} ${req.path}`, {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`, {
     ip: req.ip,
     userAgent: req.get('User-Agent')?.substring(0, 100),
     contentLength: req.get('Content-Length'),
     query: Object.keys(req.query).length > 0 ? req.query : undefined
   });
 
-  // Log del body solo para requests importantes (no para GET)
   if (req.method !== 'GET' && req.body && Object.keys(req.body).length > 0) {
-    // Log limitado para evitar mostrar datos sensibles
     const safeBody = { ...req.body };
     if (safeBody.password) safeBody.password = '[REDACTED]';
     if (safeBody.datosOCR) safeBody.datosOCR = '[Datos OCR presentes]';
     if (safeBody.contactos) safeBody.contactos = `[${safeBody.contactos.length} contactos]`;
-    console.log('📝 Body:', JSON.stringify(safeBody, null, 2));
+    console.log('Body:', JSON.stringify(safeBody, null, 2));
   }
 
   // Override del res.json para logging de responses
@@ -166,7 +151,7 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
 
     // Log de response
-    console.log(`📤 ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`, {
+    console.log(` ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`, {
       success: body?.success,
       dataPresent: !!body?.data,
       error: body?.error
@@ -178,9 +163,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// ====================================================================
 // RUTAS PRINCIPALES
-// ====================================================================
 
 // Ruta raíz con información completa
 app.get('/', (req, res) => {
@@ -195,24 +178,24 @@ app.get('/', (req, res) => {
       ocr: '/api/ocr/*',
       preinscripciones: '/api/preinscripciones/*',
       admin: '/api/admin/*',
-      periods: '/api/admin/periodos/*', // ✅ Períodos bajo /api/admin
+      periods: '/api/admin/periodos/*', 
       reportes: '/api/reportes/*',
       prediccion: '/api/prediccion/*',
       health: '/health',
       info: '/api/info'
     },
     features: [
-      '🔐 Autenticación JWT con refresh tokens',
-      '📷 OCR para carnets de identidad',
-      '📝 Preinscripciones con validación completa',
-      '👨‍💼 Panel administrativo completo',
-      '📅 Gestión de períodos de inscripción', // ✅ NUEVO
-      '📊 Reportería y estadísticas avanzadas',
-      '🤖 Predicciones con Machine Learning',
-      '🔒 Control de acceso basado en roles (RBAC)',
-      '📈 Rate limiting de seguridad',
-      '📋 Logging y auditoría detallada',
-      '❤️ Health checks completos'
+      ' Autenticación JWT con refresh tokens',
+      ' OCR para carnets de identidad',
+      ' Preinscripciones con validación completa',
+      ' Panel administrativo completo',
+      ' Gestión de períodos de inscripción',
+      ' Reportería y estadísticas avanzadas',
+      ' Predicciones con Machine Learning',
+      ' Control de acceso basado en roles (RBAC)',
+      ' Rate limiting de seguridad',
+      ' Logging y auditoría detallada',
+      ' Health checks completos'
     ]
   });
 });
@@ -228,7 +211,7 @@ app.get('/api/info', (req, res) => {
       ocr: 'Reconocimiento óptico de carnets bolivianos',
       preinscripciones: 'Sistema completo de preinscripciones',
       admin: 'Gestión administrativa y períodos',
-      periods: 'Gestión de períodos de inscripción', // ✅ NUEVO
+      periods: 'Gestión de períodos de inscripción', 
       reportes: 'Reportería y estadísticas',
       prediccion: 'Machine Learning y predicciones'
     },
@@ -249,7 +232,7 @@ app.get('/api/info', (req, res) => {
         endpoints: 11,
         features: ['Period Management', 'User Management', 'Audit Logs']
       },
-      periods: { // ✅ NUEVO
+      periods: { 
         endpoints: 7,
         features: ['CRUD Complete', 'Active Period Management', 'Validation']
       },
@@ -262,7 +245,7 @@ app.get('/api/info', (req, res) => {
         features: ['Linear Regression', 'Scoring', 'Risk Analysis']
       }
     },
-    totalEndpoints: 48, // ✅ Actualizado: 41 + 7 = 48
+    totalEndpoints: 48, 
     timestamp: new Date().toISOString()
   });
 });
@@ -277,7 +260,7 @@ app.get('/health', async (req, res) => {
       preinscripciones: { status: 'unknown' },
       auth: { status: 'operational' },
       admin: { status: 'operational' },
-      periods: { status: 'operational' }, // ✅ NUEVO
+      periods: { status: 'operational' }, 
       reportes: { status: 'operational' },
       prediccion: { status: 'operational' }
     };
@@ -315,7 +298,7 @@ app.get('/health', async (req, res) => {
         preinscripciones: servicesHealth.preinscripciones.status,
         auth: servicesHealth.auth.status,
         admin: servicesHealth.admin.status,
-        periods: servicesHealth.periods.status, // ✅ NUEVO
+        periods: servicesHealth.periods.status, 
         reportes: servicesHealth.reportes.status,
         prediccion: servicesHealth.prediccion.status
       },
@@ -340,38 +323,35 @@ app.get('/health', async (req, res) => {
 // REGISTRAR RUTAS DE MÓDULOS
 // ====================================================================
 
-// 🔐 MÓDULO DE AUTENTICACIÓN
+// MÓDULO DE AUTENTICACIÓN
 // Rutas públicas de autenticación con rate limiting específico
 app.use('/api/auth', authLimiter, authRoutes);
 
-// 📷 MÓDULO OCR
+// MÓDULO OCR
 // Procesamiento de carnets de identidad
 app.use('/api/ocr', ocrRoutes);
 
-// 📝 MÓDULO PREINSCRIPCIONES
+// MÓDULO PREINSCRIPCIONES
 // Gestión de preinscripciones con rate limiting específico
 app.use('/api/preinscripciones', preinscripcionLimiter, preinscripcionRoutes);
 
-// 👨‍💼 MÓDULO ADMINISTRATIVO
+//  MÓDULO ADMINISTRATIVO
 // Las rutas ya tienen authenticate y authorize internamente
 app.use('/api/admin', adminRoutes);
 
-// 📅 MÓDULO DE PERÍODOS (bajo /api/admin/periodos)
-// ✅ NUEVO - Gestión de períodos de inscripción
+// MÓDULO DE PERÍODOS (bajo /api/admin/periodos)
 app.use('/api/admin', periodsRoutes);
 
-// 📊 MÓDULO DE REPORTES
+// MÓDULO DE REPORTES
 // Las rutas ya tienen authenticate y authorize internamente
 app.use('/api/reportes', reportesRoutes);
 
-// 🤖 MÓDULO DE PREDICCIÓN ML
+// MÓDULO DE PREDICCIÓN ML
 // Las rutas ya tienen authenticate y authorize internamente
 app.use('/api/prediccion', prediccionRoutes);
 
 app.use('/api/admin/usuarios', adminUsuariosRoutes);
-// ====================================================================
 // MIDDLEWARE DE MANEJO DE ERRORES
-// ====================================================================
 
 // Middleware 404 - Ruta no encontrada
 app.use('*', (req, res) => {
@@ -466,7 +446,7 @@ app.use('*', (req, res) => {
 
 // Middleware de manejo de errores global
 app.use((error, req, res, next) => {
-  console.error('❌ Error global:', {
+  console.error(' Error global:', {
     error: error.message,
     stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     method: req.method,
@@ -537,55 +517,47 @@ app.use((error, req, res, next) => {
   });
 });
 
-// ====================================================================
 // FUNCIÓN PARA INICIAR EL SERVIDOR
-// ====================================================================
 
 const startServer = async () => {
   try {
-    console.log('\n🚀 ========================================');
     console.log('   INICIANDO SERVIDOR UCB ADMISSIONS');
-    console.log('   VERSIÓN 3.0 - BACKEND COMPLETO');
-    console.log('========================================');
 
     // Testear conexión a la base de datos
-    console.log('🔌 Verificando conexión a base de datos...');
     const dbConnected = await testConnection();
     if (!dbConnected) {
-      console.warn('⚠️  Base de datos no disponible, continuando sin BD...');
+      console.warn(' Base de datos no disponible, continuando sin BD...');
     } else {
-      console.log('✅ Base de datos conectada correctamente');
+      console.log(' Base de datos conectada correctamente');
     }
 
     // Verificar servicios
-    console.log('\n🔍 Verificando servicios...');
+    console.log('\n Verificando servicios...');
 
     try {
       console.log('  • Verificando servicio de preinscripciones...');
       const preinscripcionService = require('./services/preinscripcionService');
       await preinscripcionService.healthCheck();
-      console.log('  ✅ Servicio de preinscripciones operativo');
+      console.log('  Servicio de preinscripciones operativo');
     } catch (error) {
-      console.warn('  ⚠️  Servicio de preinscripciones con problemas:', error.message);
+      console.warn('  Servicio de preinscripciones con problemas:', error.message);
     }
 
     // Iniciar servidor
     const server = app.listen(PORT, () => {
-      console.log('\n✅ ========================================');
       console.log('   SERVIDOR INICIADO EXITOSAMENTE');
-      console.log('========================================');
-      console.log(`🌐 URL: http://localhost:${PORT}`);
-      console.log(`📊 Ambiente: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🗄️  Base de datos: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5433}`);
-      console.log(`🔧 OCR Language: ${process.env.OCR_LANGUAGE || 'spa'}`);
-      console.log(`📁 Upload Path: ${process.env.UPLOAD_PATH || './uploads'}`);
+      console.log(` URL: http://localhost:${PORT}`);
+      console.log(` Ambiente: ${process.env.NODE_ENV || 'development'}`);
+      console.log(` Base de datos: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5433}`);
+      console.log(` OCR Language: ${process.env.OCR_LANGUAGE || 'spa'}`);
+      console.log(` Upload Path: ${process.env.UPLOAD_PATH || './uploads'}`);
 
-      console.log('\n📋 MÓDULOS Y ENDPOINTS DISPONIBLES:');
-      console.log('   🏠  GET  / - Información general del sistema');
-      console.log('   ❤️  GET  /health - Health check completo');
-      console.log('   📄 GET  /api/info - Documentación de API');
+      console.log('\nMÓDULOS Y ENDPOINTS DISPONIBLES:');
+      console.log('    GET  / - Información general del sistema');
+      console.log('    GET  /health - Health check completo');
+      console.log('    GET  /api/info - Documentación de API');
 
-      console.log('\n   🔐 MÓDULO AUTENTICACIÓN (7 endpoints):');
+      console.log('\n  MÓDULO AUTENTICACIÓN (7 endpoints):');
       console.log('   POST /api/auth/register - Registrar nuevo usuario');
       console.log('   POST /api/auth/login - Iniciar sesión');
       console.log('   POST /api/auth/refresh - Renovar access token');
@@ -594,29 +566,29 @@ const startServer = async () => {
       console.log('   PATCH /api/auth/profile - Actualizar perfil');
       console.log('   POST /api/auth/change-password - Cambiar contraseña');
 
-      console.log('\n   📷 MÓDULO OCR (3 endpoints):');
+      console.log('\n  MÓDULO OCR (3 endpoints):');
       console.log('   POST /api/ocr/process-complete - Procesar carnet completo');
       console.log('   POST /api/ocr/process-base64 - Procesar desde Base64');
       console.log('   GET  /api/ocr/health - Health check OCR');
 
-      console.log('\n   📝 MÓDULO PREINSCRIPCIONES (8 endpoints):');
+      console.log('\n MÓDULO PREINSCRIPCIONES (8 endpoints):');
       console.log('   POST  /api/preinscripciones - Crear preinscripción');
       console.log('   GET   /api/preinscripciones/estado/:ci - Consultar por CI');
       console.log('   GET   /api/preinscripciones/health - Health check');
       console.log('   GET   /api/preinscripciones/periodo/activo - Verificar período');
-      console.log('   GET   /api/preinscripciones/estadisticas - Estadísticas (🔒)');
-      console.log('   GET   /api/preinscripciones/:id - Obtener por ID (🔒)');
-      console.log('   GET   /api/preinscripciones - Listar con filtros (🔒)');
-      console.log('   PATCH /api/preinscripciones/:id/estado - Actualizar estado (🔒)');
+      console.log('   GET   /api/preinscripciones/estadisticas - Estadísticas ');
+      console.log('   GET   /api/preinscripciones/:id - Obtener por ID ');
+      console.log('   GET   /api/preinscripciones - Listar con filtros ');
+      console.log('   PATCH /api/preinscripciones/:id/estado - Actualizar estado ');
 
-      console.log('\n   👨‍💼 MÓDULO ADMINISTRACIÓN (11 endpoints) 🔒:');
+      console.log('\n    MÓDULO ADMINISTRACIÓN (11 endpoints) :');
       console.log('   GET    /api/admin/usuarios - Listar usuarios');
       console.log('   POST   /api/admin/usuarios - Crear usuario');
       console.log('   PATCH  /api/admin/usuarios/:id/rol - Cambiar rol');
       console.log('   PATCH  /api/admin/usuarios/:id/estado - Cambiar estado');
       console.log('   GET    /api/admin/logs - Consultar logs de auditoría');
 
-      console.log('\n   📅 MÓDULO PERÍODOS (7 endpoints) 🔒:'); // ✅ NUEVO
+      console.log('\n   MÓDULO PERÍODOS (7 endpoints):');
       console.log('   POST   /api/admin/periodos - Crear período');
       console.log('   GET    /api/admin/periodos - Listar períodos');
       console.log('   GET    /api/admin/periodos/activo/current - Período activo');
@@ -625,7 +597,7 @@ const startServer = async () => {
       console.log('   DELETE /api/admin/periodos/:id - Eliminar período');
       console.log('   GET    /api/admin/health - Health check');
 
-      console.log('\n   📊 MÓDULO REPORTES (8 endpoints) 🔒:');
+      console.log('\n    MÓDULO REPORTES (8 endpoints) :');
       console.log('   GET /api/reportes/estadisticas - Estadísticas generales');
       console.log('   GET /api/reportes/distribucion-carreras - Por carrera');
       console.log('   GET /api/reportes/tendencia - Tendencias temporales');
@@ -635,31 +607,28 @@ const startServer = async () => {
       console.log('   GET /api/reportes/completo - Reporte consolidado');
       console.log('   GET /api/reportes/exportar-csv - Exportar a CSV');
 
-      console.log('\n   🤖 MÓDULO PREDICCIÓN ML (4 endpoints) 🔒:');
+      console.log('\n    MÓDULO PREDICCIÓN ML (4 endpoints) :');
       console.log('   POST /api/prediccion/inscripciones - Predicción de inscripciones');
       console.log('   POST /api/prediccion/carrera - Predicción por carrera');
       console.log('   GET  /api/prediccion/scoring/:preinscripcion_id - Scoring de postulante');
       console.log('   GET  /api/prediccion/desercion/:postulante_id - Riesgo de deserción');
 
-      console.log('\n🔒 = Requiere autenticación JWT');
-      console.log('👨‍💼/📊 = Requiere rol admin, staff o revisor');
-      console.log('🤖 = Requiere rol admin o staff');
+      console.log('\n = Requiere autenticación JWT');
+      console.log(' = Requiere rol admin, staff o revisor');
+      console.log(' = Requiere rol admin o staff');
 
-      console.log('\n📈 ESTADÍSTICAS DEL SISTEMA:');
-      console.log('   • Total de módulos: 7'); // ✅ Actualizado
-      console.log('   • Total de endpoints: 48'); // ✅ Actualizado
+      console.log('\n ESTADÍSTICAS DEL SISTEMA:');
+      console.log('   • Total de módulos: 7'); 
+      console.log('   • Total de endpoints: 48'); 
       console.log('   • Endpoints públicos: 14');
-      console.log('   • Endpoints protegidos: 34'); // ✅ Actualizado
+      console.log('   • Endpoints protegidos: 34'); 
 
-      console.log('\n🎯 Listo para recibir requests del frontend!');
-      console.log('========================================\n');
+      console.log('\n Listo para recibir requests del frontend!');
     });
 
-    // Configurar cierre elegante
     const gracefulShutdown = () => {
-      console.log('\n🛑 Iniciando cierre elegante del servidor...');
       server.close(() => {
-        console.log('✅ Servidor cerrado exitosamente');
+        console.log(' Servidor cerrado exitosamente');
         process.exit(0);
       });
     };
@@ -668,17 +637,15 @@ const startServer = async () => {
     process.on('SIGINT', gracefulShutdown);
 
   } catch (error) {
-    console.error('❌ Error iniciando servidor:', error);
+    console.error(' Error iniciando servidor:', error);
     process.exit(1);
   }
 };
 
-// ====================================================================
 // MANEJO DE ERRORES NO CAPTURADOS
-// ====================================================================
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection en:', promise, 'razón:', reason);
+  console.error(' Unhandled Rejection en:', promise, 'razón:', reason);
   // No salir del proceso en desarrollo
   if (process.env.NODE_ENV === 'production') {
     process.exit(1);
@@ -686,7 +653,7 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught Exception:', error);
+  console.error(' Uncaught Exception:', error);
   process.exit(1);
 });
 
