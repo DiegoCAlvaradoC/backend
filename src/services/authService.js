@@ -1,5 +1,5 @@
 // services/authService.js
-const { pool } = require('../config/database'); // ✅ CORREGIDO: Desestructurar pool
+const { pool } = require('../config/database'); 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
