@@ -14,14 +14,14 @@ class OCRService {
    */
   async processCompleteCarnet(frontImagePath, backImagePath) {
     try {
-      console.log('🔍 Iniciando procesamiento OCR completo...');
+      console.log(' Iniciando procesamiento OCR completo...');
       
       // Validar calidad de imágenes antes de procesar
       const frontQuality = await this.validateImageQuality(frontImagePath);
       const backQuality = await this.validateImageQuality(backImagePath);
       
-      console.log(`📊 Calidad frontal: ${frontQuality.score}/100`);
-      console.log(`📊 Calidad posterior: ${backQuality.score}/100`);
+      console.log(` Calidad frontal: ${frontQuality.score}/100`);
+      console.log(` Calidad posterior: ${backQuality.score}/100`);
       
       // Procesar ambas imágenes en paralelo
       const [frontData, backData] = await Promise.all([
@@ -58,18 +58,18 @@ class OCRService {
         }
       };
 
-      console.log('✅ OCR procesado exitosamente');
-      console.log(`📊 Confianza promedio: ${averageConfidence}%`);
+      console.log(' OCR procesado exitosamente');
+      console.log(` Confianza promedio: ${averageConfidence}%`);
       
       // Advertir si la calidad de imagen es baja
       if (averageConfidence < 50) {
-        console.log('⚠️ RECOMENDACIÓN: Mejorar la calidad de las imágenes para mejores resultados');
+        console.log(' RECOMENDACIÓN: Mejorar la calidad de las imágenes para mejores resultados');
       }
       
       return result;
 
     } catch (error) {
-      console.error('❌ Error en procesamiento OCR:', error);
+      console.error(' Error en procesamiento OCR:', error);
       return {
         success: false,
         message: 'Error procesando el carnet',
@@ -161,7 +161,7 @@ class OCRService {
       // Optimizar imagen antes del OCR
       const optimizedImagePath = await this.optimizeImage(imagePath);
       
-      console.log(`🔍 Procesando lado ${side}...`);
+      console.log(` Procesando lado ${side}...`);
       
       const { data: { text, confidence } } = await Tesseract.recognize(
         optimizedImagePath,
@@ -190,7 +190,7 @@ class OCRService {
 
       // Validar confianza mínima
       if (confidence < this.confidenceThreshold) {
-        console.log(`⚠️ Baja confianza en ${side}: ${confidence}%`);
+        console.log(` Baja confianza en ${side}: ${confidence}%`);
       }
 
       return {
@@ -200,7 +200,7 @@ class OCRService {
       };
 
     } catch (error) {
-      console.error(`❌ Error procesando ${side}:`, error);
+      console.error(` Error procesando ${side}:`, error);
       throw error;
     }
   }
@@ -214,7 +214,7 @@ class OCRService {
     try {
       // Obtener metadatos de la imagen
       const metadata = await sharp(imagePath).metadata();
-      console.log(`📏 Imagen original: ${metadata.width}x${metadata.height}`);
+      console.log(` Imagen original: ${metadata.width}x${metadata.height}`);
       
       // Determinar el factor de escalado óptimo
       const targetWidth = metadata.width < 800 ? 1600 : Math.max(1200, metadata.width * 1.5);
@@ -242,11 +242,11 @@ class OCRService {
         })
         .toFile(optimizedPath);
       
-      console.log(`✅ Imagen optimizada guardada: ${optimizedPath}`);
+      console.log(` Imagen optimizada guardada: ${optimizedPath}`);
       return optimizedPath;
       
     } catch (error) {
-      console.error('❌ Error optimizando imagen:', error);
+      console.error(' Error optimizando imagen:', error);
       // Si falla la optimización, usar imagen original
       return imagePath;
     }
@@ -260,7 +260,7 @@ class OCRService {
     const backText = backData.rawText;
     const allText = `${frontText}\n${backText}`;
 
-    // Extraer nombre completo del texto posterior (más confiable)
+    // Extraer nombre completo del texto posterior 
     const nombreCompleto = this.extractNombreCompleto(backText);
     const nombres = nombreCompleto ? nombreCompleto.nombres : this.extractNombres(frontText);
     const apellidos = nombreCompleto ? nombreCompleto.apellidos : this.extractApellidos(frontText);
@@ -279,20 +279,16 @@ class OCRService {
   }
 
   /**
-   * Extrae nombre completo del texto posterior (más preciso)
+   * Extrae nombre completo del texto posterior 
    */
   extractNombreCompleto(text) {
-    console.log('🔍 Texto para extraer nombre:', text.substring(0, 200));
+    console.log(' Texto para extraer nombre:', text.substring(0, 200));
     
     // Patrón específico para carnets bolivianos en el reverso
     const patterns = [
-      // Patrón MUY específico para "A: DIEGO CESAR ALVARADO CALLISAYA"
       /A:\s*([A-ZÁÉÍÓÚÑ]+(?:\s+[A-ZÁÉÍÓÚÑ]+){3,4})(?:\s|$)/i,
-      // Patrón para capturar nombre después de A: hasta salto de línea o caracteres especiales
-      /A:\s*([A-ZÁÉÍÓÚÑ][A-Za-záéíóúñ\s]+?)(?:\s*(?:É|Ë|È|\n|Nacido))/i,
-      // Patrón más directo para nombres en mayúsculas después de A:
+     /A:\s*([A-ZÁÉÍÓÚÑ][A-Za-záéíóúñ\s]+?)(?:\s*(?:É|Ë|È|\n|Nacido))/i,
       /A:\s*([A-ZÁÉÍÓÚÑ\s]{15,50}?)(?:\s*(?:É|È|Ë|\d|\n|$))/i,
-      // Patrón de respaldo
       /([A-ZÁÉÍÓÚÑ]+\s+[A-ZÁÉÍÓÚÑ]+\s+[A-ZÁÉÍÓÚÑ]+\s+[A-ZÁÉÍÓÚÑ]+)/
     ];
 
@@ -301,9 +297,9 @@ class OCRService {
       if (match) {
         let nombreCompleto = match[1].trim();
         
-        console.log('✅ Nombre encontrado:', nombreCompleto);
+        console.log(' Nombre encontrado:', nombreCompleto);
         
-        // Limpiar texto extra común - MEJORADO
+        // Limpiar texto extra común
         nombreCompleto = nombreCompleto.replace(/\s+(Des|ME|Nacido|E\s|e\s|É|È|Ë).*$/i, '');
         nombreCompleto = nombreCompleto.replace(/\s+Des$/i, '');
         nombreCompleto = nombreCompleto.replace(/\s+[A-Z]?e?s?$/i, '');
@@ -315,16 +311,14 @@ class OCRService {
         
         const partes = nombreCompleto.split(/\s+/).filter(p => p.length > 1);
         
-        console.log('📝 Partes del nombre:', partes);
+        console.log(' Partes del nombre:', partes);
         
         if (partes.length >= 4) {
-          // Formato: DIEGO CESAR ALVARADO CALLISAYA
           return {
             nombres: partes.slice(0, 2).join(' '),
             apellidos: partes.slice(2).join(' ')
           };
         } else if (partes.length === 3) {
-          // Formato: DIEGO ALVARADO CALLISAYA
           return {
             nombres: partes[0],
             apellidos: partes.slice(1).join(' ')
@@ -333,7 +327,7 @@ class OCRService {
       }
     }
     
-    console.log('❌ No se pudo extraer nombre completo');
+    console.log(' No se pudo extraer nombre completo');
     return null;
   }
 
@@ -407,7 +401,7 @@ class OCRService {
    * Extrae fecha de nacimiento (mejorado)
    */
   extractFechaNacimiento(text) {
-    console.log('🔍 Buscando fecha en:', text.substring(0, 300));
+    console.log(' Buscando fecha en:', text.substring(0, 300));
     
     const patterns = [
       // Patrón específico "Nacido el DD de MES de YYYY" o "Nacidoel DD de MES de YYYY"
@@ -420,7 +414,7 @@ class OCRService {
     for (const pattern of patterns) {
       const match = text.match(pattern);
       if (match) {
-        console.log('✅ Fecha encontrada:', match);
+        console.log(' Fecha encontrada:', match);
         
         if (match.length === 4) {
           // Formato "Nacido el DD de MES de YYYY"
@@ -434,7 +428,7 @@ class OCRService {
       }
     }
     
-    console.log('❌ No se encontró fecha de nacimiento');
+    console.log(' No se encontró fecha de nacimiento');
     return null;
   }
 
@@ -511,7 +505,7 @@ class OCRService {
       const match = text.match(pattern);
       if (match) {
         let padre = match[1].trim();
-        console.log('✅ Padre encontrado:', padre);
+        console.log(' Padre encontrado:', padre);
         
         // Limpiar caracteres extra y saltos de línea - MEJORADO
         padre = padre.replace(/\s*[e\n\r]+\s*[A-Z]*$/i, '');
@@ -538,7 +532,7 @@ class OCRService {
       const match = text.match(pattern);
       if (match) {
         let madre = match[1].trim();
-        console.log('✅ Madre encontrada:', madre);
+        console.log(' Madre encontrada:', madre);
         
         // Limpiar caracteres extra y saltos de línea - MEJORADO
         madre = madre.replace(/\s*[u\n\r]+\s*[A-Z]*$/i, '');
@@ -559,7 +553,7 @@ class OCRService {
    * Extrae serie del carnet (mejorado)
    */
   extractSerie(text) {
-    console.log('🔍 Buscando serie en:', text.substring(0, 300));
+    console.log(' Buscando serie en:', text.substring(0, 300));
     
     const patterns = [
       // Buscar "serie" seguido de números (más flexible)
@@ -578,7 +572,7 @@ class OCRService {
       const match = text.match(pattern);
       if (match) {
         let serie = match[1].trim();
-        console.log('✅ Serie encontrada:', serie);
+        console.log(' Serie encontrada:', serie);
         
         // Validar que la serie tenga un formato razonable
         if (serie.length >= 2 && serie.length <= 10) {
@@ -590,7 +584,7 @@ class OCRService {
       }
     }
     
-    console.log('❌ No se encontró serie válida');
+    console.log(' No se encontró serie válida');
     return null;
   }
 
@@ -682,15 +676,15 @@ class OCRService {
  */
 async processCompleteCarnetBase64(frontImageBase64, backImageBase64) {
   try {
-    console.log('🔍 Iniciando procesamiento OCR desde Base64...');
+    console.log(' Iniciando procesamiento OCR desde Base64...');
     
     // Crear archivos temporales desde Base64
     const frontTempPath = await this.saveBase64ToTempFile(frontImageBase64, 'front');
     const backTempPath = await this.saveBase64ToTempFile(backImageBase64, 'back');
     
-    console.log('✅ Archivos temporales creados');
-    console.log('📁 Front temp:', frontTempPath);
-    console.log('📁 Back temp:', backTempPath);
+    console.log(' Archivos temporales creados');
+    console.log(' Front temp:', frontTempPath);
+    console.log(' Back temp:', backTempPath);
     
     // Usar el método existente que ya funciona
     const result = await this.processCompleteCarnet(frontTempPath, backTempPath);
@@ -698,12 +692,12 @@ async processCompleteCarnetBase64(frontImageBase64, backImageBase64) {
     // Limpiar archivos temporales
     await this.cleanupTempFiles([frontTempPath, backTempPath]);
     
-    console.log('✅ Procesamiento Base64 completado y archivos limpiados');
+    console.log('Procesamiento Base64 completado y archivos limpiados');
     
     return result;
 
   } catch (error) {
-    console.error('❌ Error en procesamiento Base64:', error);
+    console.error(' Error en procesamiento Base64:', error);
     return {
       success: false,
       message: 'Error procesando el carnet desde Base64',
@@ -735,13 +729,13 @@ async saveBase64ToTempFile(base64Data, prefix) {
     // Guardar archivo
     await fs.writeFile(tempPath, imageBuffer);
     
-    console.log(`✅ Archivo Base64 guardado: ${tempPath}`);
-    console.log(`📏 Tamaño: ${imageBuffer.length} bytes`);
+    console.log(` Archivo Base64 guardado: ${tempPath}`);
+    console.log(` Tamaño: ${imageBuffer.length} bytes`);
     
     return tempPath;
     
   } catch (error) {
-    console.error(`❌ Error guardando Base64 como archivo:`, error);
+    console.error(` Error guardando Base64 como archivo:`, error);
     throw new Error(`No se pudo guardar imagen Base64: ${error.message}`);
   }
 }
@@ -753,9 +747,9 @@ async cleanupTempFiles(filePaths) {
   for (const filePath of filePaths) {
     try {
       await fs.unlink(filePath);
-      console.log(`🗑️ Archivo temporal eliminado: ${filePath}`);
+      console.log(` Archivo temporal eliminado: ${filePath}`);
     } catch (error) {
-      console.warn(`⚠️ No se pudo eliminar archivo temporal: ${filePath}`, error.message);
+      console.warn(` No se pudo eliminar archivo temporal: ${filePath}`, error.message);
     }
   }
 }

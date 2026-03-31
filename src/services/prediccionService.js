@@ -76,9 +76,8 @@ class PrediccionService {
    */
   async obtenerDatosHistoricos(periodos = 10) {
     try {
-      console.log(`📊 Obteniendo últimos ${periodos} períodos históricos...`);
+      console.log(` Obteniendo últimos ${periodos} períodos históricos...`);
 
-      // Query usando TUS tablas: periodos_inscripcion y preinscripciones
       const queryPeriodos = `
         SELECT 
           pi.id_periodo,
@@ -98,11 +97,10 @@ class PrediccionService {
 
       let result = await pool.query(queryPeriodos, [periodos]);
 
-      console.log(`🔍 Períodos encontrados en BD: ${result.rows.length}`);
+      console.log(` Períodos encontrados en BD: ${result.rows.length}`);
 
       // Si no hay datos suficientes, generar sintéticos
       if (result.rows.length < 3) {
-        console.log('⚠️ Pocos datos reales, generando datos sintéticos...');
         result.rows = await this.generarDatosSinteticos();
       }
 
@@ -157,11 +155,11 @@ class PrediccionService {
         };
       }));
 
-      console.log(`✅ Datos históricos procesados: ${datosCompletos.length} períodos`);
+      console.log(`Datos históricos procesados: ${datosCompletos.length} períodos`);
       return datosCompletos.reverse(); // Más antiguo primero
 
     } catch (error) {
-      console.error('❌ Error obteniendo datos históricos:', error);
+      console.error(' Error obteniendo datos históricos:', error);
       throw error;
     }
   }
@@ -171,16 +169,12 @@ class PrediccionService {
    */
   async generarDatosSinteticos() {
     try {
-      console.log('🔄 Generando datos sintéticos...');
 
       // Obtener total actual de preinscripciones
       const currentQuery = `SELECT COUNT(*) as total FROM preinscripciones`;
       const currentResult = await pool.query(currentQuery);
       const totalActual = parseInt(currentResult.rows[0].total) || 100;
 
-      console.log(`📊 Total actual en BD: ${totalActual}`);
-
-      // Generar 5 períodos sintéticos con crecimiento realista
       const periodos = [];
       const añoActual = new Date().getFullYear();
       const tasaCrecimiento = 1.08; // 8% de crecimiento por semestre
@@ -202,11 +196,11 @@ class PrediccionService {
         });
       }
 
-      console.log('✅ Datos sintéticos generados:', periodos.length, 'períodos');
+      console.log(' Datos sintéticos generados:', periodos.length, 'períodos');
       return periodos;
 
     } catch (error) {
-      console.error('❌ Error generando datos sintéticos:', error);
+      console.error(' Error generando datos sintéticos:', error);
       throw error;
     }
   }
@@ -216,7 +210,7 @@ class PrediccionService {
    */
   async predecirInscripciones(config = {}) {
     try {
-      console.log('🔮 Generando predicción con config:', config);
+      console.log(' Generando predicción con config:', config);
 
       const {
         tipoModelo = 'lineal',
@@ -240,19 +234,19 @@ class PrediccionService {
         };
       }
 
-      console.log(`📈 Datos para modelo: ${datosHistoricos.length} períodos`);
+      console.log(` Datos para modelo: ${datosHistoricos.length} períodos`);
 
       // Preparar datos para el modelo
       const x = datosHistoricos.map((_, index) => index + 1);
       const y = datosHistoricos.map(p => p.total);
 
-      console.log(`📊 Valores Y (totales):`, y);
+      console.log(` Valores Y (totales):`, y);
 
       // Entrenar modelo
       const modelo = new RegresionLineal();
       modelo.entrenar(x, y);
 
-      console.log(`🎯 Modelo entrenado - R²: ${modelo.r2.toFixed(4)}, Pendiente: ${modelo.m.toFixed(2)}`);
+      console.log(` Modelo entrenado - R²: ${modelo.r2.toFixed(4)}, Pendiente: ${modelo.m.toFixed(2)}`);
 
       // Calcular períodos adelante
       let periodosAdelante = 1;
@@ -263,16 +257,16 @@ class PrediccionService {
       const siguientePeriodo = x.length + periodosAdelante;
       let prediccion = Math.round(modelo.predecir(siguientePeriodo));
 
-      console.log(`🔮 Predicción base: ${prediccion}`);
+      console.log(` Predicción base: ${prediccion}`);
 
       // Aplicar factores adicionales
       if (incluirFactores.crecimientoPoblacional) {
         prediccion = Math.round(prediccion * 1.02);
-        console.log(`📈 Con crecimiento poblacional: ${prediccion}`);
+        console.log(` Con crecimiento poblacional: ${prediccion}`);
       }
       if (incluirFactores.factoresEconomicos) {
         prediccion = Math.round(prediccion * 0.98);
-        console.log(`📉 Con factores económicos: ${prediccion}`);
+        console.log(` Con factores económicos: ${prediccion}`);
       }
 
       // Asegurar que no sea negativo
@@ -341,11 +335,11 @@ class PrediccionService {
         generadoEn: new Date().toISOString()
       };
 
-      console.log('✅ Predicción generada exitosamente:', prediccion);
+      console.log(' Predicción generada exitosamente:', prediccion);
       return resultado;
 
     } catch (error) {
-      console.error('❌ Error prediciendo inscripciones:', error);
+      console.error(' Error prediciendo inscripciones:', error);
       throw error;
     }
   }
@@ -356,10 +350,10 @@ class PrediccionService {
   async obtenerHistorialPredicciones(limit = 10) {
     try {
       // Por ahora devolver array vacío (sin tabla de historial)
-      console.log('ℹ️ Historial de predicciones no implementado (sin tabla predicciones_ml)');
+      console.log('Historial de predicciones no implementado (sin tabla predicciones_ml)');
       return [];
     } catch (error) {
-      console.log('⚠️ Error obteniendo historial:', error.message);
+      console.log(' Error obteniendo historial:', error.message);
       return [];
     }
   }
@@ -369,7 +363,7 @@ class PrediccionService {
    */
   async predecirPorCarrera(carrera) {
     try {
-      console.log(`🎓 Prediciendo para carrera: ${carrera}`);
+      console.log(` Prediciendo para carrera: ${carrera}`);
 
       const query = `
         SELECT 
@@ -414,7 +408,7 @@ class PrediccionService {
       };
 
     } catch (error) {
-      console.error('❌ Error prediciendo por carrera:', error);
+      console.error(' Error prediciendo por carrera:', error);
       throw error;
     }
   }
@@ -424,7 +418,7 @@ class PrediccionService {
    */
   async calcularScoring(preinscripcionId) {
     try {
-      console.log(`📊 Calculando scoring para: ${preinscripcionId}`);
+      console.log(` Calculando scoring para: ${preinscripcionId}`);
 
       const query = `
         SELECT 
@@ -519,7 +513,7 @@ class PrediccionService {
       };
 
     } catch (error) {
-      console.error('❌ Error calculando scoring:', error);
+      console.error(' Error calculando scoring:', error);
       throw error;
     }
   }

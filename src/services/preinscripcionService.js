@@ -14,7 +14,7 @@ class PreinscripcionService {
         const client = await pool.connect();
 
         try {
-            console.log('🚀 Iniciando creación de preinscripción...');
+            console.log(' Iniciando creación de preinscripción...');
             await client.query('BEGIN');
 
             const {
@@ -35,7 +35,7 @@ class PreinscripcionService {
                 periodo_id
             } = datosCompletos;
 
-            console.log('📝 Datos recibidos en servicio:', {
+            console.log(' Datos recibidos en servicio:', {
                 nombre,
                 ci,
                 colegio_egreso,
@@ -44,20 +44,20 @@ class PreinscripcionService {
             });
 
             // 1. Buscar o crear colegio
-            console.log('🏫 Paso 1: Gestionando colegio...');
+            console.log(' Paso 1: Gestionando colegio...');
             let colegio_id = null;
             if (colegio_egreso) {
                 try {
                     colegio_id = await this.buscarOCrearColegio(client, colegio_egreso, colegio_tipo || 'PUBLICO');
-                    console.log('✅ Colegio gestionado:', colegio_id);
+                    console.log(' Colegio gestionado:', colegio_id);
                 } catch (error) {
-                    console.error('❌ Error en gestión de colegio:', error);
+                    console.error(' Error en gestión de colegio:', error);
                     throw new Error(`Error gestionando colegio: ${error.message}`);
                 }
             }
 
             // 2. Crear o actualizar postulante
-            console.log('👤 Paso 2: Gestionando postulante...');
+            console.log(' Paso 2: Gestionando postulante...');
             let postulante_id;
             try {
                 postulante_id = await this.crearOActualizarPostulante(client, {
@@ -67,54 +67,54 @@ class PreinscripcionService {
                     ciudad_procedencia,
                     colegio_id
                 });
-                console.log('✅ Postulante gestionado:', postulante_id);
+                console.log(' Postulante gestionado:', postulante_id);
             } catch (error) {
-                console.error('❌ Error en gestión de postulante:', error);
+                console.error(' Error en gestión de postulante:', error);
                 throw new Error(`Error gestionando postulante: ${error.message}`);
             }
 
             // 3. Guardar datos del OCR si existen
             if (datosOCR) {
-                console.log('🔍 Paso 3: Guardando datos OCR...');
+                console.log(' Paso 3: Guardando datos OCR...');
                 try {
                     await this.guardarDatosOCR(client, postulante_id, datosOCR);
-                    console.log('✅ Datos OCR guardados');
+                    console.log(' Datos OCR guardados');
                 } catch (error) {
-                    console.error('❌ Error guardando OCR:', error);
+                    console.error(' Error guardando OCR:', error);
                     throw new Error(`Error guardando datos OCR: ${error.message}`);
                 }
             }
 
             // 4. Obtener período activo
-            console.log('📅 Paso 4: Obteniendo período activo...');
+            console.log(' Paso 4: Obteniendo período activo...');
             let periodo_activo_id;
             try {
                 periodo_activo_id = periodo_id || await this.obtenerPeriodoActivoSeguro(client);
-                console.log('✅ Período obtenido:', periodo_activo_id);
+                console.log(' Período obtenido:', periodo_activo_id);
             } catch (error) {
-                console.error('❌ Error obteniendo período:', error);
+                console.error(' Error obteniendo período:', error);
                 throw new Error(`Error obteniendo período: ${error.message}`);
             }
 
             // 5. Obtener usuario del sistema
-            console.log('👨‍💼 Paso 5: Obteniendo usuario del sistema...');
+            console.log(' Paso 5: Obteniendo usuario del sistema...');
             let usuario_sistema_id;
             try {
                 usuario_sistema_id = usuario_id || await this.obtenerUsuarioSistema(client);
-                console.log('✅ Usuario obtenido:', usuario_sistema_id);
+                console.log(' Usuario obtenido:', usuario_sistema_id);
             } catch (error) {
-                console.error('❌ Error obteniendo usuario:', error);
+                console.error(' Error obteniendo usuario:', error);
                 throw new Error(`Error obteniendo usuario del sistema: ${error.message}`);
             }
 
-            console.log('🔍 IDs obtenidos:', {
+            console.log(' IDs obtenidos:', {
                 periodo_activo_id,
                 usuario_sistema_id,
                 postulante_id
             });
 
             // 6. Crear la preinscripción
-            console.log('📋 Paso 6: Creando preinscripción...');
+            console.log(' Paso 6: Creando preinscripción...');
             let preinscripcion_id;
             try {
                 preinscripcion_id = await this.crearPreinscripcion(client, {
@@ -129,59 +129,59 @@ class PreinscripcionService {
                         fecha_registro: new Date().toISOString()
                     })
                 });
-                console.log('✅ Preinscripción creada:', preinscripcion_id);
+                console.log(' Preinscripción creada:', preinscripcion_id);
             } catch (error) {
-                console.error('❌ Error creando preinscripción:', error);
+                console.error(' Error creando preinscripción:', error);
                 throw new Error(`Error creando preinscripción: ${error.message}`);
             }
 
             // 7. Guardar contactos de emergencia
             if (contactos && contactos.length > 0) {
-                console.log('📞 Paso 7: Guardando contactos...');
+                console.log(' Paso 7: Guardando contactos...');
                 try {
                     await this.guardarContactos(client, postulante_id, contactos);
-                    console.log('✅ Contactos guardados');
+                    console.log(' Contactos guardados');
                 } catch (error) {
-                    console.error('❌ Error guardando contactos:', error);
+                    console.error(' Error guardando contactos:', error);
                     throw new Error(`Error guardando contactos: ${error.message}`);
                 }
             }
 
             // 8. Guardar documentos entregados
             if (documentos) {
-                console.log('📄 Paso 8: Guardando documentos...');
+                console.log(' Paso 8: Guardando documentos...');
                 try {
                     await this.guardarDocumentos(client, postulante_id, documentos);
-                    console.log('✅ Documentos guardados');
+                    console.log('Documentos guardados');
                 } catch (error) {
-                    console.error('❌ Error guardando documentos:', error);
+                    console.error(' Error guardando documentos:', error);
                     throw new Error(`Error guardando documentos: ${error.message}`);
                 }
             }
 
             // 9. Generar código de seguimiento único
-            console.log('🔢 Paso 9: Generando código...');
+            console.log(' Paso 9: Generando código...');
             const codigoSeguimiento = this.generarCodigoSeguimiento();
-            console.log('✅ Código generado:', codigoSeguimiento);
+            console.log(' Código generado:', codigoSeguimiento);
 
             // 10. Actualizar preinscripción con código de seguimiento
-            console.log('📝 Paso 10: Actualizando con código...');
+            console.log(' Paso 10: Actualizando con código...');
             try {
                 await client.query(`
                     UPDATE preinscripciones 
                     SET observaciones = $1
                     WHERE id_preinscripcion = $2
                 `, [`Código de seguimiento: ${codigoSeguimiento}`, preinscripcion_id]);
-                console.log('✅ Código actualizado');
+                console.log(' Código actualizado');
             } catch (error) {
-                console.error('❌ Error actualizando código:', error);
+                console.error(' Error actualizando código:', error);
                 throw new Error(`Error actualizando código: ${error.message}`);
             }
 
-            console.log('✅ Haciendo COMMIT...');
+            console.log(' Haciendo COMMIT...');
             await client.query('COMMIT');
 
-            console.log('🎉 Preinscripción completada exitosamente');
+            console.log(' Preinscripción completada exitosamente');
             return {
                 success: true,
                 data: {
@@ -194,18 +194,18 @@ class PreinscripcionService {
             };
 
         } catch (error) {
-            console.error('❌ Error en el proceso, haciendo ROLLBACK:', error);
+            console.error(' Error en el proceso, haciendo ROLLBACK:', error);
             try {
                 await client.query('ROLLBACK');
-                console.log('✅ ROLLBACK completado');
+                console.log(' ROLLBACK completado');
             } catch (rollbackError) {
-                console.error('❌ Error en ROLLBACK:', rollbackError);
+                console.error(' Error en ROLLBACK:', rollbackError);
             }
 
             throw new Error(`Error al crear preinscripción: ${error.message}`);
         } finally {
             client.release();
-            console.log('🔓 Conexión liberada');
+            console.log(' Conexión liberada');
         }
     }
 
@@ -224,7 +224,7 @@ class PreinscripcionService {
                 offset = 0
             } = filtros;
 
-            console.log('📋 Ejecutando listarPreinscripciones con filtros:', filtros);
+            console.log(' Ejecutando listarPreinscripciones con filtros:', filtros);
 
             // Construir WHERE dinámicamente
             const conditions = [];
@@ -265,8 +265,8 @@ class PreinscripcionService {
                 ? `WHERE ${conditions.join(' AND ')}`
                 : '';
 
-            console.log('🔍 WHERE clause:', whereClause);
-            console.log('📊 Params:', params);
+            console.log(' WHERE clause:', whereClause);
+            console.log(' Params:', params);
 
             // Consulta principal con JOIN a postulantes, colegios y carreras
             const query = `
@@ -316,7 +316,7 @@ class PreinscripcionService {
 
             const countParams = params.slice(0, paramCount);
 
-            console.log('🚀 Ejecutando consultas...');
+            console.log(' Ejecutando consultas...');
 
             // Ejecutar ambas consultas
             const [dataResult, countResult] = await Promise.all([
@@ -324,7 +324,7 @@ class PreinscripcionService {
                 pool.query(countQuery, countParams)
             ]);
 
-            console.log('✅ Resultados obtenidos:', {
+            console.log(' Resultados obtenidos:', {
                 registros: dataResult.rows.length,
                 total: countResult.rows[0].total
             });
@@ -374,7 +374,7 @@ class PreinscripcionService {
             };
 
         } catch (error) {
-            console.error('❌ Error en listarPreinscripciones:', error);
+            console.error(' Error en listarPreinscripciones:', error);
             throw error;
         }
     }
@@ -414,7 +414,7 @@ class PreinscripcionService {
             return result.rows[0];
 
         } catch (error) {
-            console.error('❌ Error en service.actualizarEstado:', error);
+            console.error(' Error en service.actualizarEstado:', error);
             throw error; // Lanza el error para que el controlador lo atrape
         }
     }
@@ -423,7 +423,7 @@ class PreinscripcionService {
      */
     async obtenerPeriodoActivoSeguro(client) {
         try {
-            console.log('📅 Buscando período de inscripción...');
+            console.log(' Buscando período de inscripción...');
 
             let result = await client.query(`
                 SELECT id_periodo, fecha_inicio, fecha_fin, estado
@@ -434,7 +434,7 @@ class PreinscripcionService {
             `);
 
             if (result.rows.length > 0) {
-                console.log('✅ Período activo encontrado:', {
+                console.log('Período activo encontrado:', {
                     id: result.rows[0].id_periodo,
                     fechas: `${result.rows[0].fecha_inicio} - ${result.rows[0].fecha_fin}`,
                     estado: result.rows[0].estado
@@ -450,7 +450,7 @@ class PreinscripcionService {
             `);
 
             if (result.rows.length > 0) {
-                console.log('✅ Período encontrado (no activo):', {
+                console.log(' Período encontrado (no activo):', {
                     id: result.rows[0].id_periodo,
                     fechas: `${result.rows[0].fecha_inicio} - ${result.rows[0].fecha_fin}`,
                     estado: result.rows[0].estado
@@ -461,14 +461,14 @@ class PreinscripcionService {
             throw new Error('No hay períodos de inscripción. Debe crearse uno en la base de datos.');
 
         } catch (error) {
-            console.error('❌ Error obteniendo período:', error);
+            console.error(' Error obteniendo período:', error);
             throw error;
         }
     }
 
     async obtenerUsuarioSistema(client) {
         try {
-            console.log('🔍 Buscando usuario del sistema para preinscripciones web...');
+            console.log(' Buscando usuario del sistema para preinscripciones web...');
 
             // Buscar usuario web_system existente
             const result = await client.query(`
@@ -479,7 +479,7 @@ class PreinscripcionService {
         `);
 
             if (result.rows.length === 0) {
-                console.log('⚠️ No existe usuario web_system, creando uno...');
+                console.log(' No existe usuario web_system, creando uno...');
 
                 const id_usuario = uuidv4();
 
@@ -491,26 +491,26 @@ class PreinscripcionService {
             `, [
                     id_usuario,
                     'web_system',
-                    'web_system_no_login', // Password placeholder
-                    'PERSONAL_ADMISIONES' // ✅ ROL VÁLIDO
+                    'web_system_no_login', 
+                    'PERSONAL_ADMISIONES' 
                 ]);
 
-                console.log('✅ Usuario web_system creado con éxito:', id_usuario);
-                console.log('✅ Rol asignado: PERSONAL_ADMISIONES');
+                console.log(' Usuario web_system creado con éxito:', id_usuario);
+                console.log(' Rol asignado: PERSONAL_ADMISIONES');
                 return id_usuario;
             }
 
-            console.log('✅ Usuario web_system encontrado:', result.rows[0].id_usuario);
-            console.log('✅ Rol actual:', result.rows[0].rol);
+            console.log(' Usuario web_system encontrado:', result.rows[0].id_usuario);
+            console.log(' Rol actual:', result.rows[0].rol);
             return result.rows[0].id_usuario;
 
         } catch (error) {
-            console.error('❌ Error obteniendo usuario del sistema:', error);
+            console.error(' Error obteniendo usuario del sistema:', error);
 
             // Mensaje de error más específico
             if (error.code === '23514') { // Check constraint violation
-                console.error('💡 ERROR: El rol no es válido');
-                console.error('💡 Roles permitidos: ADMINISTRADOR, PERSONAL_ADMISIONES');
+                console.error(' ERROR: El rol no es válido');
+                console.error(' Roles permitidos: ADMINISTRADOR, PERSONAL_ADMISIONES');
             }
 
             throw new Error(`Error obteniendo usuario del sistema: ${error.message}`);
@@ -576,7 +576,7 @@ class PreinscripcionService {
         try {
             const { nombre, ci, nacionalidad, ciudad_procedencia, colegio_id } = datosPostulante;
 
-            console.log('👤 Buscando postulante con CI:', ci);
+            console.log(' Buscando postulante con CI:', ci);
 
             let result = await client.query(
                 'SELECT id_postulante FROM postulantes WHERE ci = $1',
@@ -585,7 +585,7 @@ class PreinscripcionService {
 
             if (result.rows.length > 0) {
                 const id_postulante = result.rows[0].id_postulante;
-                console.log('👤 Actualizando postulante existente:', id_postulante);
+                console.log(' Actualizando postulante existente:', id_postulante);
 
                 await client.query(`
                     UPDATE postulantes 
@@ -597,7 +597,7 @@ class PreinscripcionService {
                 return id_postulante;
             } else {
                 const id_postulante = uuidv4();
-                console.log('👤 Creando nuevo postulante:', id_postulante);
+                console.log(' Creando nuevo postulante:', id_postulante);
 
                 await client.query(`
                     INSERT INTO postulantes (id_postulante, nombre, ci, nacionalidad, ciudad_procedencia, colegio_id, created_at, updated_at)
@@ -608,7 +608,7 @@ class PreinscripcionService {
             }
 
         } catch (error) {
-            console.error('❌ Error gestionando postulante:', error);
+            console.error(' Error gestionando postulante:', error);
             throw error;
         }
     }
@@ -748,7 +748,7 @@ class PreinscripcionService {
         try {
             const { fecha_desde, fecha_hasta } = filtros;
 
-            console.log('📊 Generando estadísticas con filtros:', filtros);
+            console.log(' Generando estadísticas con filtros:', filtros);
 
             // Construir WHERE dinámicamente
             const conditions = [];
@@ -856,7 +856,7 @@ class PreinscripcionService {
                 cantidad: parseInt(row.cantidad)
             }));
 
-            console.log('✅ Estadísticas generadas:', {
+            console.log(' Estadísticas generadas:', {
                 total: resumen.totalInscripciones,
                 carreras: porCarrera.length,
                 colegios: porColegio.length,
@@ -875,7 +875,7 @@ class PreinscripcionService {
             };
 
         } catch (error) {
-            console.error('❌ Error en obtenerEstadisticas:', error);
+            console.error(' Error en obtenerEstadisticas:', error);
             throw error;
         }
     }

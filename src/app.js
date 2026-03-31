@@ -121,21 +121,19 @@ app.use((req, res, next) => {
   const start = Date.now();
 
   // Log de request
-  console.log(`🌐 ${new Date().toISOString()} - ${req.method} ${req.path}`, {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`, {
     ip: req.ip,
     userAgent: req.get('User-Agent')?.substring(0, 100),
     contentLength: req.get('Content-Length'),
     query: Object.keys(req.query).length > 0 ? req.query : undefined
   });
 
-  // Log del body solo para requests importantes (no para GET)
   if (req.method !== 'GET' && req.body && Object.keys(req.body).length > 0) {
-    // Log limitado para evitar mostrar datos sensibles
     const safeBody = { ...req.body };
     if (safeBody.password) safeBody.password = '[REDACTED]';
     if (safeBody.datosOCR) safeBody.datosOCR = '[Datos OCR presentes]';
     if (safeBody.contactos) safeBody.contactos = `[${safeBody.contactos.length} contactos]`;
-    console.log('📝 Body:', JSON.stringify(safeBody, null, 2));
+    console.log('Body:', JSON.stringify(safeBody, null, 2));
   }
 
   // Override del res.json para logging de responses
@@ -144,7 +142,7 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
 
     // Log de response
-    console.log(`📤 ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`, {
+    console.log(` ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`, {
       success: body?.success,
       dataPresent: !!body?.data,
       error: body?.error
@@ -289,7 +287,7 @@ app.get('/health', async (req, res) => {
         preinscripciones: servicesHealth.preinscripciones.status,
         auth: servicesHealth.auth.status,
         admin: servicesHealth.admin.status,
-        periods: servicesHealth.periods.status, // ✅ NUEVO
+        periods: servicesHealth.periods.status, 
         reportes: servicesHealth.reportes.status,
         prediccion: servicesHealth.prediccion.status
       },
@@ -412,7 +410,7 @@ app.use('*', (req, res) => {
 
 // Middleware de manejo de errores global
 app.use((error, req, res, next) => {
-  console.error('❌ Error global:', {
+  console.error(' Error global:', {
     error: error.message,
     stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     method: req.method,
@@ -488,11 +486,8 @@ const startServer = async () => {
   try {
     console.log('\n ========================================');
     console.log('   INICIANDO SERVIDOR UCB ADMISSIONS');
-    console.log('   VERSIÓN 3.0 - BACKEND COMPLETO');
-    console.log('========================================');
 
     // Testear conexión a la base de datos
-    console.log('🔌 Verificando conexión a base de datos...');
     const dbConnected = await testConnection();
     if (!dbConnected) {
       console.warn('  Base de datos no disponible, continuando sin BD...');
@@ -525,7 +520,7 @@ const startServer = async () => {
       console.log('     GET  /health - Health check completo');
       console.log('    GET  /api/info - Documentación de API');
 
-      console.log('\n   🔐 MÓDULO AUTENTICACIÓN (7 endpoints):');
+      console.log('\n  MÓDULO AUTENTICACIÓN (7 endpoints):');
       console.log('   POST /api/auth/register - Registrar nuevo usuario');
       console.log('   POST /api/auth/login - Iniciar sesión');
       console.log('   POST /api/auth/refresh - Renovar access token');
@@ -534,20 +529,20 @@ const startServer = async () => {
       console.log('   PATCH /api/auth/profile - Actualizar perfil');
       console.log('   POST /api/auth/change-password - Cambiar contraseña');
 
-      console.log('\n    MÓDULO OCR (3 endpoints):');
+      console.log('\n   📷 MÓDULO OCR (3 endpoints):');
       console.log('   POST /api/ocr/process-complete - Procesar carnet completo');
       console.log('   POST /api/ocr/process-base64 - Procesar desde Base64');
       console.log('   GET  /api/ocr/health - Health check OCR');
 
-      console.log('\n    MÓDULO PREINSCRIPCIONES (8 endpoints):');
+      console.log('\n   📝 MÓDULO PREINSCRIPCIONES (8 endpoints):');
       console.log('   POST  /api/preinscripciones - Crear preinscripción');
       console.log('   GET   /api/preinscripciones/estado/:ci - Consultar por CI');
       console.log('   GET   /api/preinscripciones/health - Health check');
       console.log('   GET   /api/preinscripciones/periodo/activo - Verificar período');
-      console.log('   GET   /api/preinscripciones/estadisticas - Estadísticas ');
-      console.log('   GET   /api/preinscripciones/:id - Obtener por ID ');
-      console.log('   GET   /api/preinscripciones - Listar con filtros ');
-      console.log('   PATCH /api/preinscripciones/:id/estado - Actualizar estado ');
+      console.log('   GET   /api/preinscripciones/estadisticas - Estadísticas (🔒)');
+      console.log('   GET   /api/preinscripciones/:id - Obtener por ID (🔒)');
+      console.log('   GET   /api/preinscripciones - Listar con filtros (🔒)');
+      console.log('   PATCH /api/preinscripciones/:id/estado - Actualizar estado (🔒)');
 
       console.log('\n    MÓDULO ADMINISTRACIÓN (11 endpoints) :');
       console.log('   GET    /api/admin/usuarios - Listar usuarios');
@@ -556,7 +551,7 @@ const startServer = async () => {
       console.log('   PATCH  /api/admin/usuarios/:id/estado - Cambiar estado');
       console.log('   GET    /api/admin/logs - Consultar logs de auditoría');
 
-      console.log('\n    MÓDULO PERÍODOS (7 endpoints) :'); 
+      console.log('\n   📅 MÓDULO PERÍODOS (7 endpoints) 🔒:'); // ✅ NUEVO
       console.log('   POST   /api/admin/periodos - Crear período');
       console.log('   GET    /api/admin/periodos - Listar períodos');
       console.log('   GET    /api/admin/periodos/activo/current - Período activo');
@@ -595,7 +590,6 @@ const startServer = async () => {
       console.log('========================================\n');
     });
 
-    // Configurar cierre elegante
     const gracefulShutdown = () => {
       console.log('\n Iniciando cierre elegante del servidor...');
       server.close(() => {
@@ -614,7 +608,7 @@ const startServer = async () => {
 };
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection en:', promise, 'razón:', reason);
+  console.error(' Unhandled Rejection en:', promise, 'razón:', reason);
   // No salir del proceso en desarrollo
   if (process.env.NODE_ENV === 'production') {
     process.exit(1);
@@ -622,7 +616,7 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught Exception:', error);
+  console.error(' Uncaught Exception:', error);
   process.exit(1);
 });
 
