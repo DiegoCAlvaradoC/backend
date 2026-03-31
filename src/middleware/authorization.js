@@ -23,7 +23,7 @@ const requireRole = (rolesPermitidos) => {
 
         // Verificar que el usuario tenga el rol requerido
         if (!rolesPermitidos.includes(req.usuario.rol)) {
-            console.log(`❌ Acceso denegado - Usuario: ${req.usuario.email}, Rol: ${req.usuario.rol}, Roles permitidos: ${rolesPermitidos.join(', ')}`);
+            console.log(` Acceso denegado - Usuario: ${req.usuario.email}, Rol: ${req.usuario.rol}, Roles permitidos: ${rolesPermitidos.join(', ')}`);
 
             return res.status(403).json({
                 success: false,
@@ -32,7 +32,7 @@ const requireRole = (rolesPermitidos) => {
             });
         }
 
-        console.log(`✅ Acceso permitido - Usuario: ${req.usuario.email}, Rol: ${req.usuario.rol}`);
+        console.log(` Acceso permitido - Usuario: ${req.usuario.email}, Rol: ${req.usuario.rol}`);
 
         // El usuario tiene el rol requerido, continuar
         next();

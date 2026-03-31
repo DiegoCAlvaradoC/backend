@@ -101,7 +101,7 @@ class PrediccionController {
    */
   async exportarPDF(req, res) {
     try {
-      const prediccion = req.body;
+      const prediccion = req.body.prediccion ?? req.body;
 
       if (!prediccion || !prediccion.prediccionTotal) {
         return res.status(400).json({
@@ -230,8 +230,8 @@ class PrediccionController {
    */
   async exportarExcel(req, res) {
     try {
-      const prediccion = req.body;
-
+      const prediccion = req.body.prediccion ?? req.body;
+      
       if (!prediccion || !prediccion.prediccionTotal) {
         return res.status(400).json({
           success: false,

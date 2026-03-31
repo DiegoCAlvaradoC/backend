@@ -4,7 +4,7 @@
  * Trabaja con la tabla periodos_inscripcion
  */
 
-const pool = require('../config/database');
+const { pool } = require('../config/database');
 
 class PeriodsController {
 

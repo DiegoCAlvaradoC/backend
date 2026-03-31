@@ -101,19 +101,14 @@ const formatDBError = (error) => {
  */
 const errorHandler = async (error, req, res, next) => {
   // Log del error
-  console.error('╔════════════════════════════════════════════════════════════╗');
-  console.error('║                    ERROR CAPTURADO                         ║');
-  console.error('╠════════════════════════════════════════════════════════════╣');
-  console.error(`║ Timestamp: ${new Date().toISOString()}`);
-  console.error(`║ Método: ${req.method} ${req.path}`);
-  console.error(`║ IP: ${req.ip}`);
-  console.error(`║ Usuario: ${req.user?.email || 'No autenticado'}`);
-  console.error('╠════════════════════════════════════════════════════════════╣');
-  console.error('║ Error:', error.message);
+  console.error(` Timestamp: ${new Date().toISOString()}`);
+  console.error(` Método: ${req.method} ${req.path}`);
+  console.error(`IP: ${req.ip}`);
+  console.error(`Usuario: ${req.user?.email || 'No autenticado'}`);
+  console.error(' Error:', error.message);
   if (process.env.NODE_ENV === 'development') {
     console.error('║ Stack:', error.stack);
   }
-  console.error('╚════════════════════════════════════════════════════════════╝');
 
   // Registrar error en BD (async, no bloqueante)
   if (req.user) {
@@ -247,12 +242,8 @@ const notFoundHandler = (req, res, next) => {
  */
 const setupProcessErrorHandlers = () => {
   process.on('unhandledRejection', (reason, promise) => {
-    console.error('╔═══════════════════════════════════════════════════╗');
-    console.error('║         UNHANDLED PROMISE REJECTION               ║');
-    console.error('╠═══════════════════════════════════════════════════╣');
     console.error('Promesa:', promise);
     console.error('Razón:', reason);
-    console.error('╚═══════════════════════════════════════════════════╝');
     
     // En producción, cerrar el proceso
     if (process.env.NODE_ENV === 'production') {
@@ -261,12 +252,8 @@ const setupProcessErrorHandlers = () => {
   });
 
   process.on('uncaughtException', (error) => {
-    console.error('╔═══════════════════════════════════════════════════╗');
-    console.error('║            UNCAUGHT EXCEPTION                     ║');
-    console.error('╠═══════════════════════════════════════════════════╣');
     console.error('Error:', error);
     console.error('Stack:', error.stack);
-    console.error('╚═══════════════════════════════════════════════════╝');
     
     // Siempre cerrar en uncaught exception
     process.exit(1);
