@@ -251,7 +251,6 @@ router.get('/estadisticas',
  */
 router.get('/:id',
     validarObtenerPorId,
-    // TODO: Agregar middleware de autenticación
     preinscripcionController.obtenerPorId
 );
 
@@ -278,6 +277,14 @@ router.patch('/:id/estado',
     validarActualizarEstado,
     // TODO: Agregar middleware de autenticación y autorización
     preinscripcionController.actualizarEstado
+);
+
+router.patch('/:id/documentos',
+    [
+        param('id').isUUID().withMessage('ID inválido'),
+        body('documentos').isObject().withMessage('documentos debe ser un objeto')
+    ],
+    preinscripcionController.actualizarDocumentos
 );
 
 // ====================================================================

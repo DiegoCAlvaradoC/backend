@@ -226,7 +226,6 @@ class PreinscripcionService {
 
             console.log(' Ejecutando listarPreinscripciones con filtros:', filtros);
 
-            // Construir WHERE dinámicamente
             const conditions = [];
             const params = [];
             let paramCount = 0;
@@ -236,25 +235,21 @@ class PreinscripcionService {
                 conditions.push(`p.estado = $${paramCount}`);
                 params.push(estado);
             }
-
             if (fecha_desde) {
                 paramCount++;
                 conditions.push(`p.fecha_registro >= $${paramCount}`);
                 params.push(fecha_desde);
             }
-
             if (fecha_hasta) {
                 paramCount++;
                 conditions.push(`p.fecha_registro <= $${paramCount}`);
                 params.push(fecha_hasta);
             }
-
             if (ci) {
                 paramCount++;
                 conditions.push(`post.ci ILIKE $${paramCount}`);
                 params.push(`%${ci}%`);
             }
-
             if (nombre) {
                 paramCount++;
                 conditions.push(`post.nombre ILIKE $${paramCount}`);
@@ -268,57 +263,64 @@ class PreinscripcionService {
             console.log(' WHERE clause:', whereClause);
             console.log(' Params:', params);
 
-            // Consulta principal con JOIN a postulantes, colegios y carreras
             const query = `
-            SELECT 
-                p.id_preinscripcion,
-                p.postulante_id,
-                p.periodo_id,
-                p.estado,
-                p.fecha_registro,
-                p.resumen_datos,
-                p.observaciones,
-                
-                -- Datos del Postulante
-                post.nombre,
-                post.ci,
-                post.nacionalidad,
-                post.ciudad_procedencia,
-                post.email,         -- <<< NUEVO
-                post.telefono,      -- <<< NUEVO
-                
-                -- Datos del Colegio
-                c.nombre as colegio_nombre,
-                c.tipo as colegio_tipo,
-                
-                -- Datos de la Carrera
-                car.nombre_carrera  -- <<< NUEVO
-                
-            FROM preinscripciones p
-            JOIN postulantes post ON p.postulante_id = post.id_postulante
-            LEFT JOIN colegios c ON post.colegio_id = c.id_colegio
-            LEFT JOIN carreras car ON post.id_carrera = car.id_carrera -- <<< NUEVO JOIN
-            ${whereClause}
-            ORDER BY p.fecha_registro DESC
-            LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
-        `;
+                SELECT 
+                    p.id_preinscripcion,
+                    p.postulante_id,
+                    p.periodo_id,
+                    p.estado,
+                    p.fecha_registro,
+                    p.resumen_datos,
+                    p.observaciones,
+                    
+                    post.nombre,
+                    post.ci,
+                    post.nacionalidad,
+                    post.ciudad_procedencia,
+                    post.email,
+                    post.telefono,
+                    
+                    c.nombre AS colegio_nombre,
+                    c.tipo   AS colegio_tipo,
+                    
+                    car.nombre_carrera,
+
+                    d.fotocopia_ci,
+                    d.certificado_nacimiento,
+                    d.fotografias,
+                    d.titulo_bachiller,
+                    d.verificado_ci,
+                    d.verificado_certificado,
+                    d.verificado_fotos,
+                    d.verificado_titulo,
+                    d.fecha_entrega_ci,
+                    d.fecha_entrega_certificado,
+                    d.fecha_entrega_fotos,
+                    d.fecha_entrega_titulo
+
+                FROM preinscripciones p
+                JOIN postulantes post ON p.postulante_id = post.id_postulante
+                LEFT JOIN colegios c   ON post.colegio_id  = c.id_colegio
+                LEFT JOIN carreras car ON post.id_carrera   = car.id_carrera
+                LEFT JOIN documentos d ON post.id_postulante = d.postulante_id
+                ${whereClause}
+                ORDER BY p.fecha_registro DESC
+                LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
+            `;
 
             params.push(limit, offset);
 
-            // Consulta para contar total de registros
-            // No es necesario añadir el JOIN a carreras aquí, no afecta el conteo
             const countQuery = `
-            SELECT COUNT(*) as total
-            FROM preinscripciones p
-            JOIN postulantes post ON p.postulante_id = post.id_postulante
-            ${whereClause}
-        `;
+                SELECT COUNT(*) AS total
+                FROM preinscripciones p
+                JOIN postulantes post ON p.postulante_id = post.id_postulante
+                ${whereClause}
+            `;
 
             const countParams = params.slice(0, paramCount);
 
             console.log(' Ejecutando consultas...');
 
-            // Ejecutar ambas consultas
             const [dataResult, countResult] = await Promise.all([
                 pool.query(query, params),
                 pool.query(countQuery, countParams)
@@ -329,7 +331,6 @@ class PreinscripcionService {
                 total: countResult.rows[0].total
             });
 
-            // Procesar resumen_datos si existe
             const preinscripciones = dataResult.rows.map(row => {
                 let resumenDatos = {};
                 if (row.resumen_datos) {
@@ -337,34 +338,48 @@ class PreinscripcionService {
                         resumenDatos = typeof row.resumen_datos === 'string'
                             ? JSON.parse(row.resumen_datos)
                             : row.resumen_datos;
-                    } catch (error) {
-                        console.error('Error parseando resumen_datos:', error);
+                    } catch (e) {
+                        // resumen_datos no es JSON válido, ignorar silenciosamente
                     }
                 }
 
                 return {
                     id_preinscripcion: row.id_preinscripcion,
                     postulante: {
-                        id: row.postulante_id,
-                        nombre: row.nombre,
-                        ci: row.ci,
-                        nacionalidad: row.nacionalidad,
-                        ciudad_procedencia: row.ciudad_procedencia,
-                        email: row.email,     // <<< NUEVO
-                        telefono: row.telefono  // <<< NUEVO
+                        id:                  row.postulante_id,
+                        nombre:              row.nombre,
+                        ci:                  row.ci,
+                        nacionalidad:        row.nacionalidad,
+                        ciudad_procedencia:  row.ciudad_procedencia,
+                        email:               row.email,
+                        telefono:            row.telefono,
                     },
                     colegio: row.colegio_nombre ? {
                         nombre: row.colegio_nombre,
-                        tipo: row.colegio_tipo
+                        tipo:   row.colegio_tipo,
                     } : null,
-                    carrera: row.nombre_carrera ? { // <<< NUEVO
-                        nombre: row.nombre_carrera
+                    carrera: row.nombre_carrera ? {
+                        nombre: row.nombre_carrera,
                     } : null,
-                    periodo_id: row.periodo_id,
-                    estado: row.estado,
+                    periodo_id:    row.periodo_id,
+                    estado:        row.estado,
                     fecha_registro: row.fecha_registro,
                     observaciones: row.observaciones,
-                    ...resumenDatos
+                    documentos: {
+                        fotocopia_ci:            row.fotocopia_ci            ?? false,
+                        certificado_nacimiento:  row.certificado_nacimiento  ?? false,
+                        fotografias:             row.fotografias             ?? false,
+                        titulo_bachiller:        row.titulo_bachiller        ?? false,
+                        verificado_ci:           row.verificado_ci           ?? false,
+                        verificado_certificado:  row.verificado_certificado  ?? false,
+                        verificado_fotos:        row.verificado_fotos        ?? false,
+                        verificado_titulo:       row.verificado_titulo       ?? false,
+                        fecha_entrega_ci:        row.fecha_entrega_ci        ?? null,
+                        fecha_entrega_certificado: row.fecha_entrega_certificado ?? null,
+                        fecha_entrega_fotos:     row.fecha_entrega_fotos     ?? null,
+                        fecha_entrega_titulo:    row.fecha_entrega_titulo    ?? null,
+                    },
+                    ...resumenDatos,
                 };
             });
 
@@ -613,6 +628,85 @@ class PreinscripcionService {
         }
     }
 
+    async actualizarDocumentos(preinscripcionId, documentos) {
+        const client = await pool.connect();
+        try {
+            const preinscripcion = await client.query(
+            'SELECT postulante_id FROM preinscripciones WHERE id_preinscripcion = $1',
+            [preinscripcionId]
+            );
+            if (preinscripcion.rows.length === 0) throw new Error('Preinscripción no encontrada');
+
+            const postulante_id = preinscripcion.rows[0].postulante_id;
+            const ahora = new Date().toISOString();
+
+            // Garantizar que todos los valores sean booleanos, nunca undefined
+            const fotocopia_ci           = documentos.fotocopia_ci           === true;
+            const certificado_nacimiento = documentos.certificado_nacimiento === true;
+            const fotografias            = documentos.fotografias            === true;
+            const titulo_bachiller       = documentos.titulo_bachiller       === true;
+            const verificado_ci          = documentos.verificado_ci          === true;
+            const verificado_certificado = documentos.verificado_certificado === true;
+            const verificado_fotos       = documentos.verificado_fotos       === true;
+            const verificado_titulo      = documentos.verificado_titulo      === true;
+
+            await client.query(`
+            INSERT INTO documentos (
+                id, postulante_id,
+                fotocopia_ci, certificado_nacimiento, fotografias, titulo_bachiller,
+                verificado_ci, verificado_certificado, verificado_fotos, verificado_titulo,
+                fecha_entrega_ci, fecha_entrega_certificado, fecha_entrega_fotos, fecha_entrega_titulo,
+                fecha_verificacion_ci, fecha_verificacion_certificado, fecha_verificacion_fotos, fecha_verificacion_titulo
+            )
+            VALUES (
+                uuid_generate_v4(), $1,
+                $2, $3, $4, $5,
+                $6, $7, $8, $9,
+                CASE WHEN $2 THEN $10::timestamp ELSE NULL END,
+                CASE WHEN $3 THEN $10::timestamp ELSE NULL END,
+                CASE WHEN $4 THEN $10::timestamp ELSE NULL END,
+                CASE WHEN $5 THEN $10::timestamp ELSE NULL END,
+                CASE WHEN $6 THEN $10::timestamp ELSE NULL END,
+                CASE WHEN $7 THEN $10::timestamp ELSE NULL END,
+                CASE WHEN $8 THEN $10::timestamp ELSE NULL END,
+                CASE WHEN $9 THEN $10::timestamp ELSE NULL END
+            )
+            ON CONFLICT (postulante_id) DO UPDATE SET
+                fotocopia_ci           = EXCLUDED.fotocopia_ci,
+                certificado_nacimiento = EXCLUDED.certificado_nacimiento,
+                fotografias            = EXCLUDED.fotografias,
+                titulo_bachiller       = EXCLUDED.titulo_bachiller,
+                verificado_ci          = EXCLUDED.verificado_ci,
+                verificado_certificado = EXCLUDED.verificado_certificado,
+                verificado_fotos       = EXCLUDED.verificado_fotos,
+                verificado_titulo      = EXCLUDED.verificado_titulo,
+                fecha_entrega_ci          = CASE WHEN EXCLUDED.fotocopia_ci           THEN $10::timestamp ELSE documentos.fecha_entrega_ci          END,
+                fecha_entrega_certificado = CASE WHEN EXCLUDED.certificado_nacimiento THEN $10::timestamp ELSE documentos.fecha_entrega_certificado END,
+                fecha_entrega_fotos       = CASE WHEN EXCLUDED.fotografias            THEN $10::timestamp ELSE documentos.fecha_entrega_fotos       END,
+                fecha_entrega_titulo      = CASE WHEN EXCLUDED.titulo_bachiller       THEN $10::timestamp ELSE documentos.fecha_entrega_titulo      END,
+                fecha_verificacion_ci          = CASE WHEN EXCLUDED.verificado_ci          THEN $10::timestamp ELSE NULL END,
+                fecha_verificacion_certificado = CASE WHEN EXCLUDED.verificado_certificado THEN $10::timestamp ELSE NULL END,
+                fecha_verificacion_fotos       = CASE WHEN EXCLUDED.verificado_fotos       THEN $10::timestamp ELSE NULL END,
+                fecha_verificacion_titulo      = CASE WHEN EXCLUDED.verificado_titulo      THEN $10::timestamp ELSE NULL END,
+                updated_at = $10::timestamp
+            `, [
+            postulante_id,        // $1
+            fotocopia_ci,         // $2
+            certificado_nacimiento, // $3
+            fotografias,          // $4
+            titulo_bachiller,     // $5
+            verificado_ci,        // $6
+            verificado_certificado, // $7
+            verificado_fotos,     // $8
+            verificado_titulo,    // $9
+            ahora                 // $10
+            ]);
+
+            return { postulante_id };
+        } finally {
+            client.release();
+        }
+        }
     /**
      * Guardar datos del OCR
      */

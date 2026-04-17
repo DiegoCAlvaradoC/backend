@@ -8,7 +8,6 @@ const { validationResult } = require('express-validator');
 class PreinscripcionController {
     
     /**
-     * Crear una nueva preinscripción completa
      * POST /api/preinscripciones
      */
     async crear(req, res) {
@@ -421,6 +420,50 @@ class PreinscripcionController {
                 status: 'unhealthy',
                 timestamp: new Date().toISOString(),
                 error: error.message
+            });
+        }
+    }
+    /**
+     * Actualizar documentos de una preinscripción
+     * PATCH /api/preinscripciones/:id/documentos
+     */
+    async actualizarDocumentos(req, res) {
+        try {
+            const { id } = req.params;
+            const { documentos } = req.body; // { fotocopia_ci, certificado_nacimiento, fotografias, titulo_bachiller }
+
+            if (!id || !documentos) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Datos requeridos',
+                    message: 'ID y documentos son obligatorios'
+                });
+            }
+
+            console.log('📋 Actualizando documentos de preinscripción:', { id, documentos });
+
+            const resultado = await preinscripcionService.actualizarDocumentos(id, documentos);
+
+            res.json({
+                success: true,
+                message: 'Documentos actualizados correctamente',
+                data: resultado
+            });
+
+        } catch (error) {
+            console.error('❌ Error actualizando documentos:', error);
+
+            if (error.message.includes('no encontrada')) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Preinscripción no encontrada'
+                });
+            }
+
+            res.status(500).json({
+                success: false,
+                error: 'Error interno del servidor',
+                message: 'Error al actualizar los documentos'
             });
         }
     }

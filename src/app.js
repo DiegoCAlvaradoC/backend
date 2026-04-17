@@ -529,12 +529,12 @@ const startServer = async () => {
       console.log('   PATCH /api/auth/profile - Actualizar perfil');
       console.log('   POST /api/auth/change-password - Cambiar contraseña');
 
-      console.log('\n   📷 MÓDULO OCR (3 endpoints):');
+      console.log('\n  MÓDULO OCR (3 endpoints):');
       console.log('   POST /api/ocr/process-complete - Procesar carnet completo');
       console.log('   POST /api/ocr/process-base64 - Procesar desde Base64');
       console.log('   GET  /api/ocr/health - Health check OCR');
 
-      console.log('\n   📝 MÓDULO PREINSCRIPCIONES (8 endpoints):');
+      console.log('\n  MÓDULO PREINSCRIPCIONES (8 endpoints):');
       console.log('   POST  /api/preinscripciones - Crear preinscripción');
       console.log('   GET   /api/preinscripciones/estado/:ci - Consultar por CI');
       console.log('   GET   /api/preinscripciones/health - Health check');
@@ -544,14 +544,14 @@ const startServer = async () => {
       console.log('   GET   /api/preinscripciones - Listar con filtros (🔒)');
       console.log('   PATCH /api/preinscripciones/:id/estado - Actualizar estado (🔒)');
 
-      console.log('\n    MÓDULO ADMINISTRACIÓN (11 endpoints) :');
+      console.log('\n  MÓDULO ADMINISTRACIÓN (11 endpoints) :');
       console.log('   GET    /api/admin/usuarios - Listar usuarios');
       console.log('   POST   /api/admin/usuarios - Crear usuario');
       console.log('   PATCH  /api/admin/usuarios/:id/rol - Cambiar rol');
       console.log('   PATCH  /api/admin/usuarios/:id/estado - Cambiar estado');
       console.log('   GET    /api/admin/logs - Consultar logs de auditoría');
 
-      console.log('\n   📅 MÓDULO PERÍODOS (7 endpoints) 🔒:'); // ✅ NUEVO
+      console.log('\n  MÓDULO PERÍODOS (7 endpoints) 🔒:'); // ✅ NUEVO
       console.log('   POST   /api/admin/periodos - Crear período');
       console.log('   GET    /api/admin/periodos - Listar períodos');
       console.log('   GET    /api/admin/periodos/activo/current - Período activo');
@@ -560,7 +560,7 @@ const startServer = async () => {
       console.log('   DELETE /api/admin/periodos/:id - Eliminar período');
       console.log('   GET    /api/admin/health - Health check');
 
-      console.log('\n    MÓDULO REPORTES (8 endpoints) :');
+      console.log('\n  MÓDULO REPORTES (8 endpoints) :');
       console.log('   GET /api/reportes/estadisticas - Estadísticas generales');
       console.log('   GET /api/reportes/distribucion-carreras - Por carrera');
       console.log('   GET /api/reportes/tendencia - Tendencias temporales');
@@ -570,7 +570,7 @@ const startServer = async () => {
       console.log('   GET /api/reportes/completo - Reporte consolidado');
       console.log('   GET /api/reportes/exportar-csv - Exportar a CSV');
 
-      console.log('\n    MÓDULO PREDICCIÓN ML (4 endpoints) :');
+      console.log('\n  MÓDULO PREDICCIÓN ML (4 endpoints) :');
       console.log('   POST /api/prediccion/inscripciones - Predicción de inscripciones');
       console.log('   POST /api/prediccion/carrera - Predicción por carrera');
       console.log('   GET  /api/prediccion/scoring/:preinscripcion_id - Scoring de postulante');
@@ -587,7 +587,6 @@ const startServer = async () => {
       console.log('   • Endpoints protegidos: 34'); 
 
       console.log('\n Listo para recibir requests del frontend!');
-      console.log('========================================\n');
     });
 
     const gracefulShutdown = () => {
